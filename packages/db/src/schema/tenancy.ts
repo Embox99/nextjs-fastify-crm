@@ -27,6 +27,8 @@ export const users = pgTable('users', {
   organizationId: uuid('organization_id').notNull().references(() => organizations.id),
   email: text('email').notNull(),
   fullName: text('full_name').notNull(),
+  /** bcrypt (pgcrypto). Проверяется только функцией app.authenticate */
+  passwordHash: text('password_hash'),
   isActive: boolean('is_active').notNull().default(true),
   ...timestamps(),
 }, (t) => [

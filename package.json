@@ -11,7 +11,9 @@
     "db:up": "docker compose up -d postgres redis",
     "db:down": "docker compose down",
     "db:generate": "pnpm --filter @crm/db generate",
-    "db:migrate": "pnpm --filter @crm/db migrate"
+    "db:migrate": "pnpm --filter @crm/db migrate",
+    "db:seed": "pnpm --filter @crm/db seed",
+    "dev": "turbo run dev --parallel"
   },
   "devDependencies": {
     "turbo": "^2.11.10"

@@ -1,3 +1,4 @@
+import { canSee } from '@crm/domain';
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { auditLogs } from '../src/audit';
@@ -83,6 +84,17 @@ describe('RLS: видимость сделок', () => {
     { who: 'B_ADM', ws: 'WB', sees: ['dB'] },                      // чужая организация изолирована
   ])('$who в $ws видит ровно $sees', async ({ who, ws, sees }) => {
     expect(await visibleDeals(who, ws)).toEqual([...sees].sort());
+  });
+
+  it('canSee() из @crm/domain (используется WS-шлюзом) эквивалентен RLS для всех пар пользователь × сделка', async () => {
+    const all = await admin.db.select().from(deals).where(eq(deals.workspaceId, f.id('W1')));
+    for (const who of ['ADM', 'L1', 'R1', 'R2', 'R3', 'R4']) {
+      const ctx = await f.ctx(who);
+      const viaRls = new Set((await withRls(app.db, ctx, (tx) => tx.select({ id: deals.id }).from(deals))).map((r) => r.id));
+      for (const d of all) {
+        expect(canSee(ctx, d), `${who} × ${f.label(d.id)}`).toBe(viaRls.has(d.id));
+      }
+    }
   });
 
   it('без контекста (забыли withRls) не видно ничего', async () => {

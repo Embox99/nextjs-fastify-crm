@@ -4,15 +4,18 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema/index.ts"
+    "./schema": "./src/schema/index.ts",
+    "./testing": "./src/testing.ts"
   },
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run",
     "generate": "drizzle-kit generate",
-    "migrate": "tsx src/migrate.ts"
+    "migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts",
+    "seed": "tsx --env-file-if-exists=../../.env src/seed/cli.ts"
   },
   "dependencies": {
+    "@crm/domain": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "postgres": "^3.4.9"
   },

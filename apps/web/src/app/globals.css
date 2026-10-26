@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Токены в духе shadcn/ui: компоненты ссылаются на семантические цвета, тема меняется здесь */
+:root {
+  --background: oklch(0.985 0.002 250);
+  --foreground: oklch(0.21 0.02 260);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.955 0.005 250);
+  --muted-foreground: oklch(0.52 0.02 260);
+  --border: oklch(0.91 0.006 250);
+  --primary: oklch(0.5 0.17 262);
+  --primary-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.95 0.03 262);
+  --warning: oklch(0.75 0.15 75);
+  --warning-soft: oklch(0.96 0.05 85);
+  --destructive: oklch(0.58 0.2 27);
+  --ring: oklch(0.6 0.15 262);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.17 0.01 260);
+    --foreground: oklch(0.95 0.005 250);
+    --card: oklch(0.21 0.012 260);
+    --muted: oklch(0.25 0.012 260);
+    --muted-foreground: oklch(0.7 0.015 260);
+    --border: oklch(0.3 0.012 260);
+    --primary: oklch(0.68 0.15 262);
+    --primary-foreground: oklch(0.17 0.01 260);
+    --accent: oklch(0.28 0.04 262);
+    --warning: oklch(0.8 0.14 80);
+    --warning-soft: oklch(0.32 0.06 80);
+    --destructive: oklch(0.65 0.2 27);
+    --ring: oklch(0.68 0.15 262);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive: var(--destructive);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
