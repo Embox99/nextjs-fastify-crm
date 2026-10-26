@@ -1,0 +1,36 @@
+# Локальная инфраструктура. Сервисы api/worker/web добавятся по мере появления apps/*.
+# Порты смещены (5434, 6380), чтобы не конфликтовать с другими локальными Postgres/Redis.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: crm_owner
+      POSTGRES_PASSWORD: crm_owner
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_owner -d crm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg-data:
+  redis-data:

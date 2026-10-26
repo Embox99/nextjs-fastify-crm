@@ -1,0 +1,19 @@
+{
+  "name": "lead-to-deal-engine",
+  "private": true,
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @crm/db generate",
+    "db:migrate": "pnpm --filter @crm/db migrate"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.10"
+  }
+}

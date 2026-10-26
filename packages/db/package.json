@@ -1,0 +1,27 @@
+{
+  "name": "@crm/db",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.2.1",
+    "@types/node": "^24.19.2",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
