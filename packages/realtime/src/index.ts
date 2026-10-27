@@ -1,4 +1,6 @@
-import type { ConversationDto, DealDto, LockHolder, MessageDto, ServerToClientEvents, Viewer } from '@crm/contracts';
+import type {
+  ConversationDto, DealDto, LockHolder, MessageDto, NotificationDto, ServerToClientEvents, Viewer,
+} from '@crm/contracts';
 import { rooms, rowRooms, type OwnedRow } from '@crm/domain';
 
 type EventName = keyof ServerToClientEvents;
@@ -62,6 +64,16 @@ export function createPublisher(target: BroadcastTarget) {
 
     messageUpdated(conversation: Pick<ConversationDto, 'workspaceId' | 'assigneeId' | 'teamId'>, message: MessageDto) {
       emit(rowRooms(conversationOwner(conversation)), 'message.updated', { message });
+    },
+
+    /** Уведомление — личное: только в комнату получателя */
+    notificationCreated(workspaceId: string, userId: string, notification: NotificationDto) {
+      emit([rooms.user(workspaceId, userId)], 'notification.created', { notification });
+    },
+
+    /** Без данных строк — можно всему workspace: клиенты, у которых открыта эта воронка, перезапросят доску */
+    stageRebalanced(workspaceId: string, pipelineId: string, stageId: string) {
+      emit([rooms.workspace(workspaceId)], 'stage.rebalanced', { pipelineId, stageId });
     },
   };
 }

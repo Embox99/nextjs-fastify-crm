@@ -1,6 +1,6 @@
 import type { ConversationDto, DealDto, IngestJob, MessageDto, NormalizedLead } from '@crm/contracts';
 import {
-  activities, channels, conversations, deals, inboundEvents, loadConversationDto, messages, pipelineStages,
+  activities, appendOutbox, channels, conversations, deals, inboundEvents, loadConversationDto, messages, pipelineStages,
   systemContext, toDealDto, toMessageDto, withRls, type Tx,
 } from '@crm/db';
 import { rankBetween } from '@crm/domain';
@@ -47,6 +47,13 @@ export async function processInboundEvent(deps: WorkerDeps, job: IngestJob): Pro
 
       const { contactId } = await resolveContact(tx, ctx, lead);
       const deal = await findOrCreateDeal(tx, ctx.organizationId, ctx.workspaceId, channel!.defaultPipelineId, contactId, lead);
+      if (deal.created) {
+        // Триггер LeadCreated: распределение, уведомления, SLA первого этапа
+        await appendOutbox(tx, {
+          organizationId: ctx.organizationId, workspaceId: ctx.workspaceId, type: 'lead.created',
+          dealId: deal.row.id, payload: { channelId: channel!.id }, actor: { kind: 'system' },
+        });
+      }
       const conversationId = await upsertConversation(tx, {
         organizationId: ctx.organizationId, workspaceId: ctx.workspaceId, channelId: channel!.id, lead, contactId, deal: deal.row,
       });

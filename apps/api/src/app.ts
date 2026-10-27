@@ -1,4 +1,4 @@
-import { QUEUES, type DeliverJob, type IngestJob } from '@crm/contracts';
+import { QUEUES, type DeliverJob, type IngestJob, type RebalanceJob } from '@crm/contracts';
 import { createSecretBox, type Db, type SecretBox } from '@crm/db';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
@@ -8,9 +8,11 @@ import type { Redis } from 'ioredis';
 import { createAuthResolver, type AuthResolver } from './auth/context';
 import { createTokenService, type TokenService } from './auth/tokens';
 import { authRoutes } from './modules/auth/routes';
+import { automationsRoutes } from './modules/automations/routes';
 import { channelsRoutes } from './modules/channels/routes';
 import { dealsRoutes } from './modules/deals/routes';
 import { inboxRoutes } from './modules/inbox/routes';
+import { notificationsRoutes } from './modules/notifications/routes';
 import { pipelinesRoutes } from './modules/pipelines/routes';
 import { webhookRoutes } from './modules/webhooks/routes';
 import { authPlugin } from './plugins/auth';
@@ -24,7 +26,7 @@ declare module 'fastify' {
     tokens: TokenService;
     authResolver: AuthResolver;
     secrets: SecretBox;
-    queues: { ingest: Queue<IngestJob>; deliver: Queue<DeliverJob> };
+    queues: { ingest: Queue<IngestJob>; deliver: Queue<DeliverJob>; maintenance: Queue<RebalanceJob> };
   }
 }
 
@@ -59,9 +61,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.decorate('queues', {
     ingest: new Queue<IngestJob>(QUEUES.ingest, { connection: deps.redis, defaultJobOptions }),
     deliver: new Queue<DeliverJob>(QUEUES.deliver, { connection: deps.redis, defaultJobOptions: { ...defaultJobOptions, attempts: 5 } }),
+    maintenance: new Queue<RebalanceJob>(QUEUES.maintenance, { connection: deps.redis }),
   });
   app.addHook('onClose', async () => {
-    await Promise.all([app.queues.ingest.close(), app.queues.deliver.close()]);
+    await Promise.all(Object.values(app.queues).map((q) => q.close()));
   });
 
   await app.register(sensible);
@@ -83,6 +86,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(dealsRoutes);
   await app.register(inboxRoutes);
   await app.register(channelsRoutes);
+  await app.register(automationsRoutes);
+  await app.register(notificationsRoutes);
   await app.register(webhookRoutes);
 
   return app;

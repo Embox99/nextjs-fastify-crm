@@ -11,6 +11,7 @@ CRM для сервисного B2B: лиды → сделки, омникана
 | 2 | Fastify API (вход по паролю через pgcrypto, JWT, доска, создание/правка/перемещение сделок), fractional indexing, Socket.io + Redis-адаптер с комнатами по RBAC, presence и мягкие блокировки, Next.js-канбан на dnd-kit с оптимистичными апдейтами |
 
 | 3 | Приём лидов: вебхук с HMAC (сайт) и secret token (Telegram), идемпотентность Redis + unique в БД, 202 и BullMQ; воркер: нормализация, дедупликация контактов под advisory locks, merge candidates, sweeper потерянных событий, доставка ответов в Telegram; инбокс с realtime и статусами доставки |
+| 4 | Движок автоматизаций: transactional outbox + relay (`FOR UPDATE SKIP LOCKED`), триггеры LeadCreated / StageChanged / StageSlaBreached / NoActivityInDays, условия как типизированное AST, действия AssignManager (round-robin), CreateTask, SendNotification с exactly-once по шагам; SLA на отложенных задачах; ребаланс колонок; конструктор в UI, колокольчик уведомлений, задачи в карточке; Sentry |
 
 ## Быстрый старт
 
@@ -33,7 +34,10 @@ pnpm --filter @crm/api demo:lead
 pnpm --filter @crm/api demo:lead telegram "Здравствуйте! Сколько стоит внедрение?"
 ```
 
-Новые лиды не распределены (распределение — round-robin на неделе 4), поэтому видны администратору.
+Демо-автоматизация «Распределить новый лид» назначает лид по кругу (rep1 → rep2 → …) и уведомляет менеджера.
+Чтобы увидеть уведомление руководителю, войдите как `lead@acme.test` и перетащите сделку дороже 100 000 ₽
+в «КП отправлено»: придёт уведомление, а у ответственного появится задача «Перезвонить по КП».
+Автоматизации настраиваются администратором в разделе «Автоматизации».
 Ответ в Telegram уходит через Bot API, если у канала задан токен бота; у демо-канала его нет —
 сообщение получит статус «не доставлено» с причиной.
 
@@ -45,7 +49,7 @@ pnpm --filter @crm/api demo:lead telegram "Здравствуйте! Сколь�
 
 ```
 apps/api             Fastify: REST, Socket.io-шлюз (realtime/), вход и AuthContext (auth/), вебхуки и инбокс
-apps/worker          BullMQ: ingest (нормализация, дедупликация), deliver (Telegram), sweeper
+apps/worker          BullMQ: ingest, deliver (Telegram), outbox relay, matcher и исполнитель автоматизаций, SLA, сканер, ребаланс
 apps/web             Next.js App Router: доска (features/board), инбокс (features/inbox), realtime-провайдер
 packages/realtime    publisher событий: один код для Socket.io (API) и redis-emitter (воркер)
 packages/contracts   zod-схемы DTO и типы WS-событий — общие для api и web

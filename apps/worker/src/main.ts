@@ -1,12 +1,13 @@
+import './instrument';
 import { createServer } from 'node:http';
-import { QUEUES, type IngestJob } from '@crm/contracts';
+import { QUEUES } from '@crm/contracts';
 import { createDb, createSecretBox } from '@crm/db';
 import { createPublisher } from '@crm/realtime';
 import { Emitter } from '@socket.io/redis-emitter';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { z } from 'zod';
-import type { Logger } from './deps';
+import type { Logger, WorkerDeps } from './deps';
 import { startWorkers } from './workers';
 
 const env = z.object({
@@ -24,17 +25,23 @@ const log: Logger = {
   error: (obj, msg) => console.error(JSON.stringify({ level: 'error', msg, ...obj })),
 };
 
-// Тот же app-логин, что у API: воркер работает через RLS в системном контексте workspace
-const { db, close: closeDb } = createDb(env.DATABASE_URL, { max: env.INGEST_CONCURRENCY + 5 });
+// Тот же app-логин, что у API: воркер работает через RLS в системном контексте workspace.
+// Пул — по сумме конкурентности всех обработчиков (ingest + deliver 5 + события 10 + запуски 10 + обслуживание 1)
+// плюс relay: иначе обработчики ждут соединение, а не работу.
+const { db, close: closeDb } = createDb(env.DATABASE_URL, { max: env.INGEST_CONCURRENCY + 5 + 10 + 10 + 1 + 2 });
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
-const ingestQueue = new Queue<IngestJob>(QUEUES.ingest, { connection: redis });
+const queues: WorkerDeps['queues'] = {
+  ingest: new Queue(QUEUES.ingest, { connection: redis }),
+  domainEvents: new Queue(QUEUES.domainEvents, { connection: redis }),
+  automations: new Queue(QUEUES.automations, { connection: redis }),
+};
 
 const workers = await startWorkers({
   db,
   secrets: createSecretBox(env.SECRETS_KEY),
   // Воркер не держит сокетов: события уходят через Redis тем же адаптерам, что слушают реплики API
   publisher: createPublisher(new Emitter(redis)),
-  ingestQueue,
+  queues,
   log,
   fetch,
   telegramApiUrl: env.TELEGRAM_API_URL,
@@ -53,7 +60,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     log.info({ signal }, 'shutting down');
     health.close();
     await workers.close();
-    await ingestQueue.close();
+    await Promise.all(Object.values(queues).map((q) => q.close()));
     await Promise.all([closeDb(), redis.quit()]);
     process.exit(0);
   });

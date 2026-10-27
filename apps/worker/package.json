@@ -16,6 +16,7 @@
     "@crm/db": "workspace:*",
     "@crm/domain": "workspace:*",
     "@crm/realtime": "workspace:*",
+    "@sentry/node": "^11.9.0",
     "@socket.io/redis-emitter": "^5.1.0",
     "bullmq": "^6.5.0",
     "drizzle-orm": "^0.45.4",

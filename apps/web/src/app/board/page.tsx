@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { AppShell, useSession } from '@/components/app-shell';
 import { Board } from '@/features/board/board';
 import { DealSheet } from '@/features/board/deal-sheet';
@@ -9,7 +10,10 @@ import { useBoard, useMe, usePipelines } from '@/features/board/queries';
 export default function BoardPage() {
   return (
     <AppShell>
-      <BoardScreen />
+      {/* useSearchParams требует границы Suspense */}
+      <Suspense>
+        <BoardScreen />
+      </Suspense>
     </AppShell>
   );
 }
@@ -22,6 +26,11 @@ function BoardScreen() {
   const activePipeline = pipelineId ?? pipelines.data?.[0]?.id;
   const board = useBoard(activePipeline);
   const [openDealId, setOpenDealId] = useState<string | null>(null);
+  // Переход из уведомления: /board?deal=<id> открывает карточку
+  const dealFromUrl = useSearchParams().get('deal');
+  useEffect(() => {
+    if (dealFromUrl) setOpenDealId(dealFromUrl);
+  }, [dealFromUrl]);
 
   const openDeal = openDealId ? board.data?.deals.find((d) => d.id === openDealId) : undefined;
   const permissions = new Set(me.data?.permissions);

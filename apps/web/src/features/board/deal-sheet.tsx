@@ -5,7 +5,8 @@ import { Pencil, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Avatar, Button, Input, Label } from '@/components/ui';
-import { formatMoney, shortName } from '@/lib/utils';
+import { cn, formatMoney, shortName } from '@/lib/utils';
+import { useCompleteTask, useDealTasks } from '../automations/queries';
 import { useDealLock, useLockStore, useSocket } from '../realtime/realtime-provider';
 import { useUpdateDeal } from './queries';
 
@@ -190,7 +191,42 @@ export function DealSheet({ deal, members, currentUserId, canReassign, onClose }
             )}
           </>
         )}
+
+        <DealTasks dealId={deal.id} members={members} />
       </aside>
     </div>
+  );
+}
+
+const due = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+/** Задачи сделки — в том числе поставленные автоматизациями */
+function DealTasks({ dealId, members }: { dealId: string; members: MemberDto[] }) {
+  const tasks = useDealTasks(dealId);
+  const complete = useCompleteTask(dealId);
+  if (!tasks.data?.length) return null;
+
+  return (
+    <section className="space-y-2 border-t border-border pt-4">
+      <h3 className="text-sm font-semibold">Задачи</h3>
+      <ul className="space-y-2">
+        {tasks.data.map((t) => {
+          const overdue = !t.completedAt && t.dueAt && Date.parse(t.dueAt) < Date.now();
+          return (
+            <li key={t.id} className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-0.5" checked={Boolean(t.completedAt)} disabled={Boolean(t.completedAt)}
+                onChange={() => complete.mutate(t.id)} aria-label={`Выполнено: ${t.title}`} />
+              <span className={cn('flex-1', t.completedAt && 'text-muted-foreground line-through')}>
+                {t.title}
+                <span className={cn('block text-xs text-muted-foreground', overdue && 'text-destructive')}>
+                  {t.dueAt && `до ${due.format(new Date(t.dueAt))}`}
+                  {t.assigneeId && ` · ${members.find((m) => m.id === t.assigneeId)?.fullName ?? ''}`}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

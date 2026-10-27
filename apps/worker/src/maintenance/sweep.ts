@@ -17,7 +17,7 @@ export async function sweepStaleInboundEvents(deps: WorkerDeps): Promise<number>
   );
   if (stale.length === 0) return 0;
 
-  await deps.ingestQueue.addBulk(stale.map((e) => ({
+  await deps.queues.ingest.addBulk(stale.map((e) => ({
     name: 'ingest',
     data: { inboundEventId: e.id, organizationId: e.organization_id, workspaceId: e.workspace_id },
     opts: { jobId: ingestJobId(e.id) },

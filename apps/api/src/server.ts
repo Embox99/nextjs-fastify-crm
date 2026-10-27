@@ -1,3 +1,4 @@
+import './instrument';
 import { createDb } from '@crm/db';
 import { Redis } from 'ioredis';
 import { buildApp } from './app';

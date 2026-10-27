@@ -55,7 +55,7 @@ export async function as(app: FastifyInstance, user: DemoUser) {
 
   const call = async <T>(method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) => {
     const res = await app.inject({ method, url, headers, ...(payload && { payload }) });
-    return { status: res.statusCode, body: res.json<T>() };
+    return { status: res.statusCode, body: (res.body ? res.json<T>() : undefined) as T };
   };
 
   return {

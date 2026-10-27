@@ -17,6 +17,7 @@
   "dependencies": {
     "@crm/contracts": "workspace:*",
     "@crm/domain": "workspace:*",
+    "@opentelemetry/api": "1.10.0",
     "drizzle-orm": "^0.45.4",
     "postgres": "^3.4.9"
   },

@@ -1,4 +1,5 @@
 import type { DealDto } from './board';
+import type { NotificationDto } from './automations';
 import type { ConversationDto, MessageDto } from './inbox';
 
 export interface LockHolder {
@@ -42,6 +43,9 @@ export interface ServerToClientEvents {
   'message.created': (e: { message: MessageDto; clientMutationId?: string }) => void;
   /** Смена статуса доставки исходящего сообщения */
   'message.updated': (e: { message: MessageDto }) => void;
+  'notification.created': (e: { notification: NotificationDto }) => void;
+  /** Ключи колонки перенумерованы — клиент перезапрашивает доску */
+  'stage.rebalanced': (e: { pipelineId: string; stageId: string }) => void;
 }
 
 export interface ClientToServerEvents {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui';
+import { NotificationsBell } from '@/features/automations/notifications-bell';
 import { useMe } from '@/features/board/queries';
 import { RealtimeProvider } from '@/features/realtime/realtime-provider';
 import { clearSession, readSession, type Session } from '@/lib/session';
@@ -21,6 +22,7 @@ export function useSession(): Session {
 const NAV = [
   { href: '/board', label: 'Сделки' },
   { href: '/inbox', label: 'Инбокс' },
+  { href: '/automations', label: 'Автоматизации', permission: 'settings:manage' },
 ];
 
 const SCOPE_LABEL = { all: 'видит всё', team: 'видит команду', own: 'видит своё' } as const;
@@ -61,7 +63,7 @@ function Header({ session, onLogout }: { session: Session; onLogout: () => void 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2 sm:px-6">
       <nav className="flex items-center gap-1" aria-label="Разделы">
-        {NAV.map((item) => (
+        {NAV.filter((item) => !item.permission || me.data?.permissions.includes(item.permission)).map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -77,6 +79,7 @@ function Header({ session, onLogout }: { session: Session; onLogout: () => void 
         {workspace && <span className="ml-2 hidden text-sm text-muted-foreground sm:inline">{workspace.name}</span>}
       </nav>
       <div className="flex items-center gap-3 text-sm">
+        <NotificationsBell />
         <span>
           <span className="font-medium">{session.user.fullName}</span>
           {me.data && <span className="text-muted-foreground"> — {SCOPE_LABEL[me.data.scope]}</span>}

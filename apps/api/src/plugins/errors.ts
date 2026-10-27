@@ -1,4 +1,5 @@
 import { NotAWorkspaceMemberError } from '@crm/db';
+import * as Sentry from '@sentry/node';
 import { RankConflictError } from '@crm/domain';
 import type { FastifyError, FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
@@ -41,6 +42,11 @@ export function registerErrorHandler(app: FastifyInstance) {
     const { statusCode } = error as FastifyError;
     if (statusCode && statusCode < 500) return reply.send(error);
     req.log.error({ err: error }, 'unhandled error');
+    Sentry.withScope((scope) => {
+      scope.setTags({ route: req.routeOptions.url ?? 'unknown', method: req.method });
+      if (req.auth) scope.setTags({ workspaceId: req.auth.workspaceId }).setUser({ id: req.auth.userId });
+      Sentry.captureException(error);
+    });
     return reply.code(500).send({ error: 'Internal Server Error' });
   });
 }

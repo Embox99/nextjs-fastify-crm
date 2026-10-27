@@ -8,6 +8,8 @@ import { io, type Socket } from 'socket.io-client';
 import { API_URL } from '@/lib/api';
 import type { Session } from '@/lib/session';
 import { boardKeys, pendingMutations, upsertDealInCache } from '../board/queries';
+import { toast } from 'sonner';
+import { automationKeys, prependNotification } from '../automations/queries';
 import { inboxKeys, upsertConversationInCache, upsertMessageInCache } from '../inbox/queries';
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -63,6 +65,7 @@ export function RealtimeProvider({ session, children }: { session: Session; chil
         void qc.invalidateQueries({ queryKey: boardKeys.all });
         void qc.invalidateQueries({ queryKey: inboxKeys.conversations });
         void qc.invalidateQueries({ queryKey: ['messages'] });
+        void qc.invalidateQueries({ queryKey: automationKeys.notifications });
       }
       connectedBefore = true;
     });
@@ -80,6 +83,14 @@ export function RealtimeProvider({ session, children }: { session: Session; chil
       upsertMessageInCache(qc, message);
     });
     s.on('message.updated', ({ message }) => upsertMessageInCache(qc, message));
+    s.on('notification.created', ({ notification }) => {
+      prependNotification(qc, notification);
+      toast(notification.title, { description: notification.body ?? undefined });
+      // Уведомление о сделке часто сопровождает новую задачу — пусть открытая карточка её покажет
+      if (notification.dealId) void qc.invalidateQueries({ queryKey: automationKeys.tasks(notification.dealId) });
+    });
+    // Колонку перенумеровали фоново — порядок прежний, но ключи новые: проще перечитать доску
+    s.on('stage.rebalanced', ({ pipelineId }) => void qc.invalidateQueries({ queryKey: boardKeys.board(pipelineId) }));
 
     setSocket(s);
     const timer = setInterval(() => locks.pruneExpired(), 2_000);

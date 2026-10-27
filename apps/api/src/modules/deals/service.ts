@@ -1,5 +1,5 @@
 import type { CreateDealInput, DealDto, MoveDealInput, UpdateDealInput } from '@crm/contracts';
-import { deals, pipelineStages, teamMembers, toDealDto, type AuthContext, type Tx } from '@crm/db';
+import { appendOutbox, deals, pipelineStages, teamMembers, toDealDto, type AuthContext, type Tx } from '@crm/db';
 import { needsRebalance, rankBetween, RankConflictError, type OwnedRow } from '@crm/domain';
 import { and, asc, eq, gt, inArray, min, sql } from 'drizzle-orm';
 import { ConflictError } from '../../plugins/errors';
@@ -11,6 +11,9 @@ export interface DealChange {
 }
 
 export class NotFoundError extends Error {}
+
+const tenant = (auth: AuthContext) => ({ organizationId: auth.organizationId, workspaceId: auth.workspaceId });
+const user = (auth: AuthContext) => ({ kind: 'user' as const, id: auth.userId });
 
 const owned = (d: { workspaceId: string; ownerId: string | null; teamId: string | null }): OwnedRow => ({
   workspaceId: d.workspaceId, ownerId: d.ownerId, teamId: d.teamId,
@@ -43,10 +46,11 @@ export async function createDeal(tx: Tx, auth: AuthContext, input: CreateDealInp
     ownerId,
     teamId,
   }).returning();
+  await appendOutbox(tx, { ...tenant(auth), type: 'deal.created', dealId: row!.id, payload: {}, actor: user(auth) });
   return { deal: toDealDto(row!) };
 }
 
-export async function updateDeal(tx: Tx, id: string, input: UpdateDealInput): Promise<DealChange> {
+export async function updateDeal(tx: Tx, auth: AuthContext, id: string, input: UpdateDealInput): Promise<DealChange> {
   const prev = await lockDeal(tx, id);
   // Optimistic concurrency: правка поверх чужой несохранённой версии — конфликт, а не тихая перезапись
   if (prev.version !== input.version) throw new ConflictError('Deal was modified by someone else', toDealDto(prev));
@@ -60,6 +64,12 @@ export async function updateDeal(tx: Tx, id: string, input: UpdateDealInput): Pr
     updatedAt: sql`now()`,
   }).where(eq(deals.id, id)).returning();
 
+  if (row!.ownerId !== prev.ownerId) {
+    await appendOutbox(tx, {
+      ...tenant(auth), type: 'deal.assigned', dealId: id,
+      payload: { ownerId: row!.ownerId, previousOwnerId: prev.ownerId }, actor: user(auth),
+    });
+  }
   return { deal: toDealDto(row!), previous: owned(prev) };
 }
 
@@ -67,7 +77,7 @@ export async function updateDeal(tx: Tx, id: string, input: UpdateDealInput): Pr
  * Перемещение карточки. Клиент присылает id соседей, а не готовый ключ: ранги соседей
  * читаются здесь, в транзакции, поэтому клиент с устаревшим состоянием не испортит порядок.
  */
-export async function moveDeal(tx: Tx, id: string, input: MoveDealInput): Promise<DealChange & { rebalance: boolean }> {
+export async function moveDeal(tx: Tx, auth: AuthContext, id: string, input: MoveDealInput): Promise<DealChange & { rebalance: boolean }> {
   const neighbourIds = [input.beforeId, input.afterId].filter((x): x is string => x !== null);
   const neighbours = neighbourIds.length
     ? await tx.select({ id: deals.id, rank: deals.rank, stageId: deals.stageId }).from(deals)
@@ -92,6 +102,14 @@ export async function moveDeal(tx: Tx, id: string, input: MoveDealInput): Promis
     ...(stageChanged && { stageEnteredAt: sql`now()` }),
   }).where(eq(deals.id, id)).returning();
 
+  // Событие для движка автоматизаций — в той же транзакции (transactional outbox)
+  if (stageChanged) {
+    await appendOutbox(tx, {
+      ...tenant(auth), type: 'deal.stage_changed', dealId: id,
+      payload: { fromStageId: prev.stageId, toStageId: input.toStageId, stageEnteredAt: row!.stageEnteredAt.toISOString() },
+      actor: user(auth),
+    });
+  }
   return { deal: toDealDto(row!), rebalance: needsRebalance(rank) };
 }
 

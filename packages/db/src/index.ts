@@ -10,6 +10,7 @@ export {
   type WebhookChannel,
 } from './inbox';
 export { createSecretBox, type SecretBox } from './secrets';
+export { appendOutbox, toDomainEvent } from './outbox';
 export { runMigrations, migrationsFolder } from './migrate';
 export {
   seedDemo, DEMO_ORG, DEMO_PASSWORD, DEMO_WEBSITE_SECRET, DEMO_TELEGRAM_SECRET, type DemoSeed,

@@ -114,6 +114,8 @@ export const activities = pgTable('activities', {
   type: activityType('type').notNull(),
   payload: jsonb('payload').notNull().default({}),
   authorId: uuid('author_id'),
+  /** Исполнитель задачи (type = 'task') */
+  assigneeId: uuid('assignee_id'),
   dueAt: timestamp('due_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   ...timestamps(),
@@ -124,4 +126,5 @@ export const activities = pgTable('activities', {
   foreignKey({ columns: [t.workspaceId, t.dealId], foreignColumns: [deals.workspaceId, deals.id] }).onDelete('cascade'),
   foreignKey({ columns: [t.workspaceId, t.contactId], foreignColumns: [contacts.workspaceId, contacts.id] }),
   foreignKey({ columns: [t.organizationId, t.authorId], foreignColumns: [users.organizationId, users.id] }),
+  foreignKey({ columns: [t.organizationId, t.assigneeId], foreignColumns: [users.organizationId, users.id] }),
 ]);

@@ -1,4 +1,4 @@
-import { QUEUES, type IngestJob } from '@crm/contracts';
+import { QUEUES } from '@crm/contracts';
 import { createDb, createSecretBox, inboundEvents, type DbHandle } from '@crm/db';
 import { TEST_SECRETS_KEY } from '@crm/db/testing';
 import { createPublisher, type BroadcastTarget } from '@crm/realtime';
@@ -34,14 +34,18 @@ export function makeDeps(overrides: Partial<WorkerDeps> = {}): TestDeps {
   const admin = createDb(inject('adminUrl'), { max: 2 });
   const redis = new Redis(inject('redisUrl'), { maxRetriesPerRequest: null });
   const emitted: Emitted[] = [];
-  const ingestQueue = new Queue<IngestJob>(QUEUES.ingest, { connection: redis });
+  const queues: WorkerDeps['queues'] = {
+    ingest: new Queue(QUEUES.ingest, { connection: redis }),
+    domainEvents: new Queue(QUEUES.domainEvents, { connection: redis }),
+    automations: new Queue(QUEUES.automations, { connection: redis }),
+  };
   const silent = { info() {}, warn() {}, error() {} };
 
   return {
     db: app.db,
     secrets: createSecretBox(TEST_SECRETS_KEY),
     publisher: createPublisher(recordingTarget(emitted)),
-    ingestQueue,
+    queues,
     log: silent,
     fetch: () => Promise.reject(new Error('network disabled in tests')),
     telegramApiUrl: 'https://telegram.test',
@@ -50,7 +54,7 @@ export function makeDeps(overrides: Partial<WorkerDeps> = {}): TestDeps {
     admin,
     redis,
     async close() {
-      await ingestQueue.close();
+      await Promise.all(Object.values(queues).map((q) => q.close()));
       await Promise.all([app.close(), admin.close(), redis.quit()]);
     },
   };

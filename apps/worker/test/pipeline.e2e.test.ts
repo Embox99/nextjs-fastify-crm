@@ -23,7 +23,7 @@ beforeAll(async () => {
   });
   await api.listen({ host: '127.0.0.1', port: 0 });
   url = `http://127.0.0.1:${(api.server.address() as AddressInfo).port}`;
-  workers = await startWorkers(deps, { connection: deps.redis, ingestConcurrency: 10, sweepEveryMs: 0 });
+  workers = await startWorkers(deps, { connection: deps.redis, ingestConcurrency: 10, sweepEveryMs: 0, staleScanEveryMs: 0 });
 });
 
 afterAll(async () => {
@@ -105,6 +105,18 @@ describe('вебхук → очередь → воркер', () => {
 
     console.log(`burst: 600 req in ${Math.round(httpMs)} ms (${Math.round(600 / (httpMs / 1000))} req/s), drained in ${Math.round(totalMs)} ms`);
   }, 120_000);
+
+  it('лид через вебхук сам распределяется менеджеру: outbox → relay → matcher → AssignManager', async () => {
+    const phone = randomPhone();
+    expect(await postLead({ name: 'Авто', phone, message: 'распредели меня' }, uniq('auto'))).toBe(202);
+
+    await waitFor(async () => {
+      const [row] = await deps.admin.db.select({ ownerId: deals.ownerId }).from(deals)
+        .innerJoin(contactIdentities, eq(contactIdentities.contactId, deals.contactId))
+        .where(and(eq(contactIdentities.kind, 'phone'), eq(contactIdentities.value, phone)));
+      return Boolean(row?.ownerId);
+    });
+  });
 
   it('событие, потерянное между INSERT и enqueue, подхватывает sweeper', async () => {
     const phone = randomPhone();

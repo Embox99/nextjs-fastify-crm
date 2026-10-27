@@ -26,6 +26,8 @@ export function canSee(viewer: Viewer, row: OwnedRow): boolean {
 
 /** Комнаты Socket.io повторяют модель видимости: событие строки уходит ровно тем, кто её видит. */
 export const rooms = {
+  /** Все сокеты workspace — только для событий без данных строк (например, «колонка перенумерована») */
+  workspace: (workspaceId: string) => `ws:${workspaceId}`,
   workspaceAll: (workspaceId: string) => `ws:${workspaceId}:all`,
   team: (workspaceId: string, teamId: string) => `ws:${workspaceId}:team:${teamId}`,
   user: (workspaceId: string, userId: string) => `ws:${workspaceId}:user:${userId}`,
@@ -34,7 +36,8 @@ export const rooms = {
 
 /** Комнаты, в которые должен попасть сокет пользователя */
 export function viewerRooms(viewer: Viewer): string[] {
-  const result = viewer.userId ? [rooms.user(viewer.workspaceId, viewer.userId)] : [];
+  const result = [rooms.workspace(viewer.workspaceId)];
+  if (viewer.userId) result.push(rooms.user(viewer.workspaceId, viewer.userId));
   if (viewer.scope === 'all') result.push(rooms.workspaceAll(viewer.workspaceId));
   if (viewer.scope === 'team') result.push(...viewer.teamIds.map((t) => rooms.team(viewer.workspaceId, t)));
   return result;

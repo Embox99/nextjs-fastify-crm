@@ -1,4 +1,6 @@
-import { CreateDealInput, MoveDealInput, UpdateDealInput, type DealDto } from '@crm/contracts';
+import {
+  CreateDealInput, MoveDealInput, rebalanceJobId, UpdateDealInput, type DealDto, type RebalanceJob,
+} from '@crm/contracts';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { requirePermission } from '../../plugins/auth';
@@ -33,7 +35,7 @@ export async function dealsRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: 'Forbidden', message: 'Missing permission deal:reassign' });
     }
 
-    const change = await req.tx((tx) => updateDeal(tx, dealId, input)).catch(notFound(reply));
+    const change = await req.tx((tx) => updateDeal(tx, req.auth, dealId, input)).catch(notFound(reply));
     if (!change) return;
 
     app.realtime.dealUpserted(change, { actorId: req.auth.userId, clientMutationId: input.clientMutationId });
@@ -46,12 +48,22 @@ export async function dealsRoutes(app: FastifyInstance) {
     const { dealId } = DealParams.parse(req.params);
     const input = MoveDealInput.parse(req.body);
 
-    const change = await req.tx((tx) => moveDeal(tx, dealId, input)).catch(notFound(reply));
+    const change = await req.tx((tx) => moveDeal(tx, req.auth, dealId, input)).catch(notFound(reply));
     if (!change) return;
 
     // Публикация — после коммита: подписчики не увидят изменение, которое потом откатится
     app.realtime.dealUpserted(change, { actorId: req.auth.userId, clientMutationId: input.clientMutationId });
-    if (change.rebalance) req.log.warn({ stageId: change.deal.stageId }, 'stage ranks need rebalancing');
+    if (change.rebalance) {
+      // Ключи колонки стали длинными — воркер перенумерует её. Фиксированный jobId + задержка:
+      // серия перетаскиваний в одну колонку даёт одну перенумерацию, а не по одной на каждое.
+      const job: RebalanceJob = {
+        stageId: change.deal.stageId, pipelineId: change.deal.pipelineId,
+        organizationId: req.auth.organizationId, workspaceId: req.auth.workspaceId,
+      };
+      await app.queues.maintenance.add('rebalance-stage', job, {
+        jobId: rebalanceJobId(job.stageId), delay: 5_000, removeOnComplete: true, removeOnFail: true,
+      });
+    }
     return change.deal;
   });
 }

@@ -1,9 +1,10 @@
+import type { AutomationInput } from '@crm/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 import { evenRanks } from '@crm/domain';
 import type { Db } from '../client';
 import type { SecretBox } from '../secrets';
 import {
-  channels, contacts, deals, organizations, pipelineStages, pipelines, rolePermissions, roles, teamMembers, teams, users,
+  assignmentPoolMembers, assignmentPools, automations, channels, contacts, deals, organizations, pipelineStages, pipelines, rolePermissions, roles, teamMembers, teams, users,
   workspaceMembers, workspaces,
 } from '../schema';
 
@@ -61,6 +62,7 @@ export interface DemoSeed {
   teams: { enterprise: string; smb: string };
   stages: Record<StageKey, string>;
   channels: { website: string; telegram: string };
+  assignmentPool: string;
 }
 
 export const DEMO_WEBSITE_SECRET = 'demo-website-hmac-secret';
@@ -78,7 +80,71 @@ const DEMO_CHANNELS = [
 export async function seedDemo(db: Db, secrets: SecretBox): Promise<DemoSeed> {
   const existing = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, DEMO_ORG));
   const core = existing[0] ? await loadDemo(db, existing[0].id) : await seedCore(db);
-  return { ...core, channels: await ensureChannels(db, core, secrets) };
+  return {
+    ...core,
+    channels: await ensureChannels(db, core, secrets),
+    assignmentPool: await ensureAutomations(db, core),
+  };
+}
+
+/**
+ * Пул round-robin (rep1, rep2 → команда Enterprise) и демо-автоматизации на все четыре триггера.
+ * Как и каналы — отдельным идемпотентным шагом, чтобы догнать базу, засеянную раньше.
+ */
+async function ensureAutomations(db: Db, core: CoreSeed): Promise<string> {
+  const tenant = { organizationId: core.organizationId, workspaceId: core.workspaceId };
+  const [existingPool] = await db.select({ id: assignmentPools.id }).from(assignmentPools)
+    .where(eq(assignmentPools.workspaceId, core.workspaceId));
+  if (existingPool) return existingPool.id;
+
+  return db.transaction(async (tx) => {
+    const [pool] = await tx.insert(assignmentPools)
+      .values({ ...tenant, name: 'Входящие лиды → Enterprise', teamId: core.teams.enterprise }).returning({ id: assignmentPools.id });
+    await tx.insert(assignmentPoolMembers).values([
+      { ...tenant, poolId: pool!.id, userId: core.users.rep1, position: 0 },
+      { ...tenant, poolId: pool!.id, userId: core.users.rep2, position: 1 },
+    ]);
+
+    const demo: (Omit<AutomationInput, 'enabled'> & { enabled?: boolean })[] = [
+      {
+        name: 'Распределить новый лид',
+        trigger: { type: 'LeadCreated' },
+        conditions: { all: [] },
+        actions: [
+          { type: 'AssignManager', poolId: pool!.id },
+          { type: 'SendNotification', to: 'owner', message: 'Вам назначен новый лид: {{deal.title}}' },
+        ],
+      },
+      {
+        name: 'SLA: лид без реакции 15 минут',
+        trigger: { type: 'StageSlaBreached', stageId: core.stages.new },
+        conditions: { all: [] },
+        actions: [
+          { type: 'SendNotification', to: 'teamLead', message: 'Лид «{{deal.title}}» ждёт реакции дольше 15 минут' },
+          { type: 'CreateTask', title: 'Срочно связаться: {{deal.title}}', dueInMinutes: 30, assignTo: 'owner' },
+        ],
+      },
+      {
+        name: 'Крупная сделка: КП отправлено',
+        trigger: { type: 'StageChanged', toStageId: core.stages.proposal },
+        conditions: { all: [{ field: 'deal.value', op: 'gt', value: 100000 }] },
+        actions: [
+          { type: 'CreateTask', title: 'Перезвонить по КП: {{deal.title}}', dueInMinutes: 2 * 24 * 60, assignTo: 'owner' },
+          { type: 'SendNotification', to: 'teamLead', message: 'Крупная сделка «{{deal.title}}» на {{deal.value}} — КП отправлено' },
+        ],
+      },
+      {
+        name: 'Сделка без активности 7 дней',
+        trigger: { type: 'NoActivityInDays', days: 7 },
+        conditions: { all: [] },
+        actions: [{ type: 'SendNotification', to: 'owner', message: 'Сделка «{{deal.title}}» без активности неделю' }],
+      },
+    ];
+    await tx.insert(automations).values(demo.map((a) => ({
+      ...tenant, name: a.name, trigger: a.trigger, triggerType: a.trigger.type, conditions: a.conditions, actions: a.actions,
+    })));
+    return pool!.id;
+  });
 }
 
 /**
@@ -107,7 +173,7 @@ async function ensureChannels(db: Db, core: CoreSeed, secrets: SecretBox): Promi
   return result;
 }
 
-type CoreSeed = Omit<DemoSeed, 'channels'>;
+type CoreSeed = Omit<DemoSeed, 'channels' | 'assignmentPool'>;
 
 async function seedCore(db: Db): Promise<CoreSeed> {
   return db.transaction(async (tx) => {
