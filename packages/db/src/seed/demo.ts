@@ -1,8 +1,9 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { evenRanks } from '@crm/domain';
 import type { Db } from '../client';
+import type { SecretBox } from '../secrets';
 import {
-  contacts, deals, organizations, pipelineStages, pipelines, rolePermissions, roles, teamMembers, teams, users,
+  channels, contacts, deals, organizations, pipelineStages, pipelines, rolePermissions, roles, teamMembers, teams, users,
   workspaceMembers, workspaces,
 } from '../schema';
 
@@ -59,16 +60,56 @@ export interface DemoSeed {
   users: Record<UserKey, string>;
   teams: { enterprise: string; smb: string };
   stages: Record<StageKey, string>;
+  channels: { website: string; telegram: string };
 }
+
+export const DEMO_WEBSITE_SECRET = 'demo-website-hmac-secret';
+export const DEMO_TELEGRAM_SECRET = 'demo-telegram-secret-token';
+
+const DEMO_CHANNELS = [
+  { key: 'website', kind: 'website_form', name: 'Форма на сайте', secret: DEMO_WEBSITE_SECRET },
+  { key: 'telegram', kind: 'telegram', name: 'Telegram-бот', secret: DEMO_TELEGRAM_SECRET },
+] as const;
 
 /**
  * Демо-организация «acme»: workspace «Москва», команды Enterprise (лид + rep1, rep2) и SMB (rep3),
  * воронка из 6 этапов, 13 сделок. Выполняется под владельцем схемы (в обход RLS). Идемпотентна.
  */
-export async function seedDemo(db: Db): Promise<DemoSeed> {
+export async function seedDemo(db: Db, secrets: SecretBox): Promise<DemoSeed> {
   const existing = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, DEMO_ORG));
-  if (existing[0]) return loadDemo(db, existing[0].id);
+  const core = existing[0] ? await loadDemo(db, existing[0].id) : await seedCore(db);
+  return { ...core, channels: await ensureChannels(db, core, secrets) };
+}
 
+/**
+ * Каналы демо-организации с известными секретами — чтобы `pnpm demo:lead` мог подписывать запросы.
+ * Отдельный шаг: база, засеянная до появления каналов, получает их при повторном запуске.
+ */
+async function ensureChannels(db: Db, core: CoreSeed, secrets: SecretBox): Promise<DemoSeed['channels']> {
+  const result = {} as DemoSeed['channels'];
+  for (const def of DEMO_CHANNELS) {
+    const [found] = await db.select({ id: channels.id }).from(channels)
+      .where(and(eq(channels.workspaceId, core.workspaceId), eq(channels.name, def.name)));
+    if (found) {
+      result[def.key] = found.id;
+      continue;
+    }
+    const [created] = await db.insert(channels).values({
+      organizationId: core.organizationId,
+      workspaceId: core.workspaceId,
+      kind: def.kind,
+      name: def.name,
+      webhookSecret: secrets.seal(def.secret),
+      defaultPipelineId: core.pipelineId,
+    }).returning({ id: channels.id });
+    result[def.key] = created!.id;
+  }
+  return result;
+}
+
+type CoreSeed = Omit<DemoSeed, 'channels'>;
+
+async function seedCore(db: Db): Promise<CoreSeed> {
   return db.transaction(async (tx) => {
     const [org] = await tx.insert(organizations).values({ name: 'Acme Services', slug: DEMO_ORG }).returning();
     const organizationId = org!.id;
@@ -150,7 +191,7 @@ export async function seedDemo(db: Db): Promise<DemoSeed> {
   });
 }
 
-async function loadDemo(db: Db, organizationId: string): Promise<DemoSeed> {
+async function loadDemo(db: Db, organizationId: string): Promise<CoreSeed> {
   const [ws] = await db.select().from(workspaces).where(eq(workspaces.organizationId, organizationId));
   const [pipeline] = await db.select().from(pipelines).where(eq(pipelines.workspaceId, ws!.id));
   const userRows = await db.select({ id: users.id, email: users.email }).from(users)

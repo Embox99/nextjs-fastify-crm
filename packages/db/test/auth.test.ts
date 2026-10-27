@@ -3,6 +3,8 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { authenticate, listUserWorkspaces } from '../src/auth';
 import { createDb, type DbHandle } from '../src/client';
 import { users } from '../src/schema';
+import { createSecretBox } from '../src/secrets';
+import { TEST_SECRETS_KEY } from '../src/testing';
 import { DEMO_ORG, DEMO_PASSWORD, seedDemo, type DemoSeed } from '../src/seed/demo';
 
 let admin: DbHandle;
@@ -12,7 +14,7 @@ let demo: DemoSeed;
 beforeAll(async () => {
   admin = createDb(inject('adminUrl'), { max: 1 });
   app = createDb(inject('appUrl'), { max: 2 });
-  demo = await seedDemo(admin.db);
+  demo = inject('demo');
 });
 
 afterAll(async () => {
@@ -38,7 +40,7 @@ describe('authenticate', () => {
   });
 
   it('seedDemo идемпотентен', async () => {
-    expect(await seedDemo(admin.db)).toEqual(demo);
+    expect(await seedDemo(admin.db, createSecretBox(TEST_SECRETS_KEY))).toEqual(demo);
   });
 });
 

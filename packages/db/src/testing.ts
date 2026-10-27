@@ -3,6 +3,8 @@ import postgres from 'postgres';
 import { runMigrations } from './migrate';
 
 export const TEST_APP_USER = 'crm_app_user';
+/** Детерминированный ключ шифрования секретов для тестов */
+export const TEST_SECRETS_KEY = Buffer.alloc(32, 7).toString('base64');
 
 export interface TestDatabase {
   /** Суперпользователь контейнера: сиды и проверки в обход RLS */

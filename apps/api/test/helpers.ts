@@ -1,6 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import type { BoardDto, ClientToServerEvents, DealDto, ServerToClientEvents } from '@crm/contracts';
 import { createDb, DEMO_ORG, DEMO_PASSWORD } from '@crm/db';
+import { TEST_SECRETS_KEY } from '@crm/db/testing';
 import type { FastifyInstance } from 'fastify';
 import { Redis } from 'ioredis';
 import { io, type Socket } from 'socket.io-client';
@@ -19,7 +20,9 @@ export interface Replica {
 export async function startReplica(): Promise<Replica> {
   const { db, close: closeDb } = createDb(inject('appUrl'), { max: 5 });
   const redis = new Redis(inject('redisUrl'), { maxRetriesPerRequest: null });
-  const app = await buildApp({ db, redis, jwtSecret: JWT_SECRET, corsOrigin: ['http://localhost:3000'] });
+  const app = await buildApp({
+    db, redis, jwtSecret: JWT_SECRET, secretsKey: TEST_SECRETS_KEY, corsOrigin: ['http://localhost:3000'],
+  });
   await app.listen({ host: '127.0.0.1', port: 0 });
 
   return {

@@ -8,6 +8,7 @@ import { io, type Socket } from 'socket.io-client';
 import { API_URL } from '@/lib/api';
 import type { Session } from '@/lib/session';
 import { boardKeys, pendingMutations, upsertDealInCache } from '../board/queries';
+import { inboxKeys, upsertConversationInCache, upsertMessageInCache } from '../inbox/queries';
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -58,7 +59,11 @@ export function RealtimeProvider({ session, children }: { session: Session; chil
 
     s.on('connect', () => {
       // Pub/Sub не гарантирует доставку: всё, что пропущено за время разрыва, добираем рефетчем
-      if (connectedBefore) void qc.invalidateQueries({ queryKey: boardKeys.all });
+      if (connectedBefore) {
+        void qc.invalidateQueries({ queryKey: boardKeys.all });
+        void qc.invalidateQueries({ queryKey: inboxKeys.conversations });
+        void qc.invalidateQueries({ queryKey: ['messages'] });
+      }
       connectedBefore = true;
     });
     s.on('deal.upserted', (e) => {
@@ -69,6 +74,12 @@ export function RealtimeProvider({ session, children }: { session: Session; chil
       qc.setQueriesData<BoardDto>({ queryKey: boardKeys.all }, (b) => (b ? applyDealRemoval(b, dealId) : b));
     });
     s.on('deal.lock', ({ dealId, lockedBy }) => locks.set(dealId, lockedBy));
+    s.on('conversation.upserted', ({ conversation }) => upsertConversationInCache(qc, conversation));
+    s.on('message.created', ({ message, clientMutationId }) => {
+      if (clientMutationId && pendingMutations.has(clientMutationId)) return;
+      upsertMessageInCache(qc, message);
+    });
+    s.on('message.updated', ({ message }) => upsertMessageInCache(qc, message));
 
     setSocket(s);
     const timer = setInterval(() => locks.pruneExpired(), 2_000);

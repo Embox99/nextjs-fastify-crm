@@ -1,5 +1,5 @@
-import { createDb, seedDemo, type DemoSeed } from '@crm/db';
-import { startTestDatabase, type TestDatabase } from '@crm/db/testing';
+import { createDb, createSecretBox, seedDemo, type DemoSeed } from '@crm/db';
+import { startTestDatabase, TEST_SECRETS_KEY, type TestDatabase } from '@crm/db/testing';
 import { RedisContainer, type StartedRedisContainer } from '@testcontainers/redis';
 import type { TestProject } from 'vitest/node';
 
@@ -19,7 +19,7 @@ export async function setup(project: TestProject) {
   [database, redis] = await Promise.all([startTestDatabase(), new RedisContainer('redis:7-alpine').start()]);
 
   const admin = createDb(database.adminUrl, { max: 1 });
-  const demo = await seedDemo(admin.db);
+  const demo = await seedDemo(admin.db, createSecretBox(TEST_SECRETS_KEY));
   await admin.close();
 
   project.provide('adminUrl', database.adminUrl);

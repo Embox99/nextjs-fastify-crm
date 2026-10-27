@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import fp from 'fastify-plugin';
 import { Server, type Socket } from 'socket.io';
 import { createDealSessions } from './locks';
-import { createPublisher, type Publisher } from './publisher';
+import { createPublisher, type Publisher } from '@crm/realtime';
 
 declare module 'fastify' {
   interface FastifyInstance {

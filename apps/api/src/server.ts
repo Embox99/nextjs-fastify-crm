@@ -7,7 +7,9 @@ const env = loadEnv();
 const { db, close: closeDb } = createDb(env.DATABASE_URL);
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
 
-const app = await buildApp({ db, redis, jwtSecret: env.JWT_SECRET, corsOrigin: env.CORS_ORIGIN, logger: true });
+const app = await buildApp({
+  db, redis, jwtSecret: env.JWT_SECRET, secretsKey: env.SECRETS_KEY, corsOrigin: env.CORS_ORIGIN, logger: true,
+});
 
 app.addHook('onClose', async () => {
   await Promise.all([closeDb(), redis.quit()]);

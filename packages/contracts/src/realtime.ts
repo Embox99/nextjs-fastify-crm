@@ -1,4 +1,5 @@
 import type { DealDto } from './board';
+import type { ConversationDto, MessageDto } from './inbox';
 
 export interface LockHolder {
   userId: string;
@@ -37,6 +38,10 @@ export interface ServerToClientEvents {
   'deal.removed': (e: { dealId: string }) => void;
   'deal.lock': (e: DealLockEvent) => void;
   'deal.presence': (e: DealPresenceEvent) => void;
+  'conversation.upserted': (e: { conversation: ConversationDto }) => void;
+  'message.created': (e: { message: MessageDto; clientMutationId?: string }) => void;
+  /** Смена статуса доставки исходящего сообщения */
+  'message.updated': (e: { message: MessageDto }) => void;
 }
 
 export interface ClientToServerEvents {

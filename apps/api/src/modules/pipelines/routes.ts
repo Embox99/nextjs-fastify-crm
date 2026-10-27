@@ -1,11 +1,10 @@
 import type { BoardDto, PipelineDto } from '@crm/contracts';
-import { deals, pipelineStages, pipelines, users, workspaceMembers } from '@crm/db';
+import { deals, pipelineStages, pipelines, toDealDto, users, workspaceMembers } from '@crm/db';
 import { compareByRank } from '@crm/domain';
 import { asc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requirePermission } from '../../plugins/auth';
-import { toDealDto } from '../deals/dto';
 
 const PipelineParams = z.object({ pipelineId: z.uuid() });
 

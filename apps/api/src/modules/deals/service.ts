@@ -1,9 +1,8 @@
 import type { CreateDealInput, DealDto, MoveDealInput, UpdateDealInput } from '@crm/contracts';
-import { deals, pipelineStages, teamMembers, type AuthContext, type Tx } from '@crm/db';
+import { deals, pipelineStages, teamMembers, toDealDto, type AuthContext, type Tx } from '@crm/db';
 import { needsRebalance, rankBetween, RankConflictError, type OwnedRow } from '@crm/domain';
 import { and, asc, eq, gt, inArray, min, sql } from 'drizzle-orm';
 import { ConflictError } from '../../plugins/errors';
-import { toDealDto } from './dto';
 
 export interface DealChange {
   deal: DealDto;

@@ -1,5 +1,5 @@
 import type { DealDto } from '@crm/contracts';
-import type { deals } from '@crm/db';
+import type { deals } from './schema';
 
 type DealRow = typeof deals.$inferSelect;
 
