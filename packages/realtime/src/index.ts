@@ -1,5 +1,5 @@
 import type {
-  ConversationDto, DealDto, LockHolder, MessageDto, NotificationDto, ServerToClientEvents, Viewer,
+  ConversationDto, DealDto, LockHolder, MessageDto, NotificationDto, ServerToClientEvents, StageDto, Viewer,
 } from '@crm/contracts';
 import { rooms, rowRooms, type OwnedRow } from '@crm/domain';
 
@@ -74,6 +74,15 @@ export function createPublisher(target: BroadcastTarget) {
     /** Без данных строк — можно всему workspace: клиенты, у которых открыта эта воронка, перезапросят доску */
     stageRebalanced(workspaceId: string, pipelineId: string, stageId: string) {
       emit([rooms.workspace(workspaceId)], 'stage.rebalanced', { pipelineId, stageId });
+    },
+
+    /** Колонки видны всем участникам workspace — событие уходит в общую комнату */
+    stageUpserted(workspaceId: string, stage: StageDto) {
+      emit([rooms.workspace(workspaceId)], 'stage.upserted', { stage });
+    },
+
+    stageDeleted(workspaceId: string, e: { pipelineId: string; stageId: string; movedTo: string | null }) {
+      emit([rooms.workspace(workspaceId)], 'stage.deleted', e);
     },
   };
 }

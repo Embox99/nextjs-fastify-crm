@@ -1,4 +1,4 @@
-import type { DealDto } from './board';
+import type { DealDto, StageDto } from './board';
 import type { NotificationDto } from './automations';
 import type { ConversationDto, MessageDto } from './inbox';
 
@@ -46,6 +46,10 @@ export interface ServerToClientEvents {
   'notification.created': (e: { notification: NotificationDto }) => void;
   /** Ключи колонки перенумерованы — клиент перезапрашивает доску */
   'stage.rebalanced': (e: { pipelineId: string; stageId: string }) => void;
+  /** Колонка создана, переименована или переставлена */
+  'stage.upserted': (e: { stage: StageDto }) => void;
+  /** Колонка удалена; её сделки (если были) перенесены в movedTo */
+  'stage.deleted': (e: { pipelineId: string; stageId: string; movedTo: string | null }) => void;
 }
 
 export interface ClientToServerEvents {

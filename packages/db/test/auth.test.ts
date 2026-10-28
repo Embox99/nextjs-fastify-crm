@@ -36,7 +36,7 @@ describe('authenticate', () => {
   });
 
   it('список workspace пользователя', async () => {
-    expect(await listUserWorkspaces(app.db, demo.users.rep1)).toEqual([{ id: demo.workspaceId, name: 'Москва' }]);
+    expect(await listUserWorkspaces(app.db, demo.users.rep1)).toEqual([{ id: demo.workspaceId, name: 'New York' }]);
   });
 
   it('seedDemo идемпотентен', async () => {

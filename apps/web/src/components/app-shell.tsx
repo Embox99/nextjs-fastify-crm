@@ -7,6 +7,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { Button } from '@/components/ui';
 import { NotificationsBell } from '@/features/automations/notifications-bell';
 import { useMe } from '@/features/board/queries';
+import { useI18n } from '@/i18n/i18n-provider';
+import { LanguageSwitcher } from '@/i18n/language-switcher';
+import type { MessageKey } from '@/i18n/messages';
 import { RealtimeProvider } from '@/features/realtime/realtime-provider';
 import { clearSession, readSession, type Session } from '@/lib/session';
 import { cn } from '@/lib/utils';
@@ -19,13 +22,11 @@ export function useSession(): Session {
   return session;
 }
 
-const NAV = [
-  { href: '/board', label: 'Сделки' },
-  { href: '/inbox', label: 'Инбокс' },
-  { href: '/automations', label: 'Автоматизации', permission: 'settings:manage' },
+const NAV: { href: string; label: MessageKey; permission?: string }[] = [
+  { href: '/board', label: 'nav.board' },
+  { href: '/inbox', label: 'nav.inbox' },
+  { href: '/automations', label: 'nav.automations', permission: 'settings:manage' },
 ];
-
-const SCOPE_LABEL = { all: 'видит всё', team: 'видит команду', own: 'видит своё' } as const;
 
 /** Каркас авторизованных страниц: сессия, WebSocket-соединение (одно на вкладку) и навигация */
 export function AppShell({ children }: { children: ReactNode }) {
@@ -58,11 +59,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 function Header({ session, onLogout }: { session: Session; onLogout: () => void }) {
   const pathname = usePathname();
   const me = useMe();
+  const { t } = useI18n();
   const workspace = session.workspaces.find((w) => w.id === session.workspaceId);
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2 sm:px-6">
-      <nav className="flex items-center gap-1" aria-label="Разделы">
+      <nav className="flex items-center gap-1" aria-label={t('nav.sections')}>
         {NAV.filter((item) => !item.permission || me.data?.permissions.includes(item.permission)).map((item) => (
           <Link
             key={item.href}
@@ -73,18 +75,19 @@ function Header({ session, onLogout }: { session: Session; onLogout: () => void 
               pathname.startsWith(item.href) && 'bg-muted text-foreground',
             )}
           >
-            {item.label}
+            {t(item.label)}
           </Link>
         ))}
         {workspace && <span className="ml-2 hidden text-sm text-muted-foreground sm:inline">{workspace.name}</span>}
       </nav>
       <div className="flex items-center gap-3 text-sm">
+        <LanguageSwitcher />
         <NotificationsBell />
         <span>
           <span className="font-medium">{session.user.fullName}</span>
-          {me.data && <span className="text-muted-foreground"> — {SCOPE_LABEL[me.data.scope]}</span>}
+          {me.data && <span className="text-muted-foreground"> — {t(`scope.${me.data.scope}`)}</span>}
         </span>
-        <Button variant="ghost" onClick={onLogout} aria-label="Выйти"><LogOut className="size-4" /></Button>
+        <Button variant="ghost" onClick={onLogout} aria-label={t('nav.logout')}><LogOut className="size-4" /></Button>
       </div>
     </header>
   );

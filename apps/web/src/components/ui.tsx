@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, ComponentProps, LabelHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 // Минимальный набор примитивов в стиле shadcn/ui: семантические токены, ring-фокус, варианты через пропсы
@@ -21,7 +21,8 @@ export function Button({ className, variant = 'primary', ...props }: ButtonHTMLA
   );
 }
 
-export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+// ComponentProps<'input'> включает ref (React 19 передаёт его обычным пропсом)
+export function Input({ className, ...props }: ComponentProps<'input'>) {
   return (
     <input
       className={cn(

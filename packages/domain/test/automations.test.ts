@@ -65,9 +65,10 @@ describe('triggerMatches', () => {
 });
 
 describe('renderTemplate', () => {
-  it('подставляет название и сумму', () => {
-    expect(renderTemplate('Сделка «{{deal.title}}» на {{deal.value}}', { title: 'Аудит', value: '150000.00' }))
-      .toBe('Сделка «Аудит» на 150 000 ₽');
+  it('подставляет название и сумму в валюте сделки', () => {
+    expect(renderTemplate('Deal "{{deal.title}}" worth {{deal.value}}', { title: 'Audit', value: '150000.00', currency: 'USD' }))
+      .toBe('Deal "Audit" worth $150,000');
+    expect(renderTemplate('{{deal.value}}', { title: '', value: '150000', currency: 'EUR' })).toBe('€150,000');
   });
 });
 

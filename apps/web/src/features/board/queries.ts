@@ -3,6 +3,7 @@ import { applyDealUpsert, applyMove } from '@crm/domain';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ApiError, apiFetch } from '@/lib/api';
+import { useI18n } from '@/i18n/i18n-provider';
 import { newMutationId } from '@/lib/utils';
 
 export const boardKeys = {
@@ -41,6 +42,7 @@ type MoveVars = Omit<MoveDealInput, 'clientMutationId'> & { dealId: string };
  */
 export function useMoveDeal(pipelineId: string) {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const key = boardKeys.board(pipelineId);
 
   const mutation = useMutation({
@@ -52,9 +54,7 @@ export function useMoveDeal(pipelineId: string) {
     onSuccess: (deal) => upsertDealInCache(qc, deal),
     onError: (err, vars) => {
       if (vars.snapshot) qc.setQueryData(key, vars.snapshot);
-      toast.error(err instanceof ApiError && err.status === 409
-        ? 'Доску успели изменить — порядок обновлён'
-        : 'Не удалось переместить сделку');
+      toast.error(t(err instanceof ApiError && err.status === 409 ? 'board.moveConflict' : 'board.moveFailed'));
       void qc.invalidateQueries({ queryKey: key });
     },
     onSettled: (_d, _e, vars) => pendingMutations.delete(vars.clientMutationId),
@@ -72,6 +72,7 @@ export function useMoveDeal(pipelineId: string) {
 
 export function useCreateDeal() {
   const qc = useQueryClient();
+  const { t } = useI18n();
   return useMutation({
     mutationFn: (input: Omit<CreateDealInput, 'clientMutationId'>) => {
       const clientMutationId = newMutationId();
@@ -80,12 +81,13 @@ export function useCreateDeal() {
         .finally(() => pendingMutations.delete(clientMutationId));
     },
     onSuccess: (deal) => upsertDealInCache(qc, deal),
-    onError: () => toast.error('Не удалось создать сделку'),
+    onError: () => toast.error(t('board.createFailed')),
   });
 }
 
 export function useUpdateDeal() {
   const qc = useQueryClient();
+  const { t } = useI18n();
   return useMutation({
     mutationFn: ({ dealId, ...input }: Omit<UpdateDealInput, 'clientMutationId'> & { dealId: string }) => {
       const clientMutationId = newMutationId();
@@ -98,9 +100,9 @@ export function useUpdateDeal() {
       if (err instanceof ApiError && err.status === 409) {
         const current = err.body.current as DealDto | undefined;
         if (current) upsertDealInCache(qc, current);
-        toast.warning('Сделку уже изменил другой пользователь — показаны актуальные данные');
+        toast.warning(t('board.updateConflict'));
       } else {
-        toast.error(err instanceof ApiError && err.status === 403 ? 'Недостаточно прав' : 'Не удалось сохранить');
+        toast.error(t(err instanceof ApiError && err.status === 403 ? 'common.forbidden' : 'common.saveFailed'));
       }
     },
   });

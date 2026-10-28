@@ -82,6 +82,6 @@ function normalizeTelegram(payload: unknown): NormalizedLead {
     name,
     phone,
     telegramUserId: String(from.id),
-    message: message.text ?? (message.contact ? 'Поделился контактом' : undefined),
+    message: message.text ?? (message.contact ? 'Shared a contact' : undefined),
   });
 }

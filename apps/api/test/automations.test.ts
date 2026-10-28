@@ -54,7 +54,7 @@ describe('автоматизации', () => {
   it('пулы распределения с участниками', async () => {
     const adm = await as(api.app, 'admin');
     const pools = await adm.get<{ id: string; members: { fullName: string }[] }[]>('/assignment-pools');
-    expect(pools.body[0]?.members.map((m) => m.fullName)).toEqual(['Мария Петрова', 'Иван Сидоров']);
+    expect(pools.body[0]?.members.map((m) => m.fullName)).toEqual(['Maria Lopez', 'Ethan Brooks']);
   });
 });
 

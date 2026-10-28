@@ -3,11 +3,13 @@
 import { Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Input } from '@/components/ui';
+import { useI18n } from '@/i18n/i18n-provider';
 import { useCreateDeal } from './queries';
 
 export function NewDealForm({ pipelineId, stageId }: { pipelineId: string; stageId: string }) {
   const [title, setTitle] = useState('');
   const create = useCreateDeal();
+  const { t } = useI18n();
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -22,8 +24,8 @@ export function NewDealForm({ pipelineId, stageId }: { pipelineId: string; stage
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Новая сделка"
-        aria-label="Название новой сделки"
+        placeholder={t('board.newDeal')}
+        aria-label={t('board.newDealAria')}
         className="pl-8"
         disabled={create.isPending}
       />

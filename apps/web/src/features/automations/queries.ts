@@ -1,6 +1,7 @@
 import type { AssignmentPoolDto, AutomationDto, AutomationInput, NotificationDto, TaskDto } from '@crm/contracts';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useI18n } from '@/i18n/i18n-provider';
 import { ApiError, apiFetch } from '@/lib/api';
 
 export const automationKeys = {
@@ -18,14 +19,15 @@ export const usePools = () =>
 
 export function useSaveAutomation() {
   const qc = useQueryClient();
+  const { t } = useI18n();
   return useMutation({
     mutationFn: ({ id, input }: { id?: string; input: AutomationInput }) =>
       apiFetch<AutomationDto>(id ? `/automations/${id}` : '/automations', { method: id ? 'PATCH' : 'POST', body: input }),
     onSuccess: () => {
-      toast.success('Автоматизация сохранена');
+      toast.success(t('automations.saved'));
       void qc.invalidateQueries({ queryKey: automationKeys.list });
     },
-    onError: (err) => toast.error(err instanceof ApiError ? `Не сохранено: ${err.message}` : 'Не удалось сохранить'),
+    onError: (err) => toast.error(err instanceof ApiError ? t('automations.saveFailed', { reason: err.message }) : t('common.saveFailed')),
   });
 }
 
@@ -86,6 +88,7 @@ export const useDealTasks = (dealId: string) =>
 
 export function useCompleteTask(dealId: string) {
   const qc = useQueryClient();
+  const { t } = useI18n();
   return useMutation({
     mutationFn: (taskId: string) => apiFetch<void>(`/tasks/${taskId}/complete`, { method: 'POST', body: {} }),
     onMutate: (taskId) => {
@@ -93,7 +96,7 @@ export function useCompleteTask(dealId: string) {
         list?.map((t) => (t.id === taskId ? { ...t, completedAt: new Date().toISOString() } : t)));
     },
     onError: () => {
-      toast.error('Не удалось отметить задачу');
+      toast.error(t('deal.taskFailed'));
       void qc.invalidateQueries({ queryKey: automationKeys.tasks(dealId) });
     },
   });

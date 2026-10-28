@@ -84,12 +84,12 @@ describe('presence и мягкие блокировки', () => {
     const started = await emitAck(rep1.socket, 'deal.edit.start', { dealId: deal.id });
     expect(started).toMatchObject({ ok: true, acquired: true });
     // Лид ещё не открыл карточку, но индикатор на доске получает через комнату команды
-    expect((await leadSeesLock).lockedBy?.name).toBe('Мария Петрова');
+    expect((await leadSeesLock).lockedBy?.name).toBe('Maria Lopez');
 
     const presence = nextEvent(rep1.socket, 'deal.presence', (e) => e.dealId === deal.id && e.viewers.length === 2);
     const leadOpened = await emitAck(lead.socket, 'deal.open', { dealId: deal.id });
     expect(leadOpened.ok && leadOpened.lockedBy?.userId).toBe(demo.users.rep1);
-    expect((await presence).viewers.map((v) => v.name).sort()).toEqual(['Мария Петрова', 'Олег Лидов']);
+    expect((await presence).viewers.map((v) => v.name).sort()).toEqual(['Maria Lopez', 'Oliver Grant']);
 
     const contested = await emitAck(lead.socket, 'deal.edit.start', { dealId: deal.id });
     expect(contested).toMatchObject({ ok: true, acquired: false, lockedBy: { userId: demo.users.rep1 } });

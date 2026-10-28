@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react';
 import { Column } from './column';
 import { DealCardView } from './deal-card';
 import { NewDealForm } from './new-deal-form';
+import { AddStage, StageSheet } from './stage-controls';
 import { useMoveDeal } from './queries';
 
 type Columns = Record<string, string[]>;
@@ -19,10 +20,12 @@ interface BoardProps {
   board: BoardDto;
   currentUserId: string;
   canCreate: boolean;
+  /** settings:manage — добавление и настройка колонок */
+  canManageStages: boolean;
   onOpenDeal: (dealId: string) => void;
 }
 
-export function Board({ board, currentUserId, canCreate, onOpenDeal }: BoardProps) {
+export function Board({ board, currentUserId, canCreate, canManageStages, onOpenDeal }: BoardProps) {
   const moveDeal = useMoveDeal(board.pipeline.id);
   const sensors = useSensors(
     // Небольшой порог, чтобы клик по карточке открывал её, а не начинал перетаскивание
@@ -40,6 +43,8 @@ export function Board({ board, currentUserId, canCreate, onOpenDeal }: BoardProp
   // Пока идёт перетаскивание, раскладка живёт локально: карточка «переезжает» между колонками на лету
   const [dragColumns, setDragColumns] = useState<Columns | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [settingsStageId, setSettingsStageId] = useState<string | null>(null);
+  const settingsStage = board.stages.find((s) => s.id === settingsStageId);
   const columns = dragColumns ?? serverColumns;
 
   const containerOf = (id: string, cols: Columns) =>
@@ -122,8 +127,10 @@ export function Board({ board, currentUserId, canCreate, onOpenDeal }: BoardProp
             header={canCreate && stage.id === firstOpenStage?.id
               ? <NewDealForm pipelineId={board.pipeline.id} stageId={stage.id} />
               : undefined}
+            onOpenSettings={canManageStages ? () => setSettingsStageId(stage.id) : undefined}
           />
         ))}
+        {canManageStages && <AddStage pipelineId={board.pipeline.id} />}
       </div>
       <DragOverlay dropAnimation={null}>
         {activeDeal && (
@@ -135,6 +142,15 @@ export function Board({ board, currentUserId, canCreate, onOpenDeal }: BoardProp
           />
         )}
       </DragOverlay>
+      {settingsStage && (
+        <StageSheet
+          key={settingsStage.id}
+          stage={settingsStage}
+          stages={board.stages}
+          dealCount={serverColumns[settingsStage.id]?.length ?? 0}
+          onClose={() => setSettingsStageId(null)}
+        />
+      )}
     </DndContext>
   );
 }

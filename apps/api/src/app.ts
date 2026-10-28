@@ -14,6 +14,7 @@ import { dealsRoutes } from './modules/deals/routes';
 import { inboxRoutes } from './modules/inbox/routes';
 import { notificationsRoutes } from './modules/notifications/routes';
 import { pipelinesRoutes } from './modules/pipelines/routes';
+import { stagesRoutes } from './modules/stages/routes';
 import { webhookRoutes } from './modules/webhooks/routes';
 import { authPlugin } from './plugins/auth';
 import { registerErrorHandler } from './plugins/errors';
@@ -83,6 +84,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(realtimePlugin, { corsOrigin: deps.corsOrigin });
   await app.register(authRoutes);
   await app.register(pipelinesRoutes);
+  await app.register(stagesRoutes);
   await app.register(dealsRoutes);
   await app.register(inboxRoutes);
   await app.register(channelsRoutes);

@@ -8,6 +8,7 @@ import { io, type Socket } from 'socket.io-client';
 import { API_URL } from '@/lib/api';
 import type { Session } from '@/lib/session';
 import { boardKeys, pendingMutations, upsertDealInCache } from '../board/queries';
+import { upsertStageInCache } from '../board/stage-queries';
 import { toast } from 'sonner';
 import { automationKeys, prependNotification } from '../automations/queries';
 import { inboxKeys, upsertConversationInCache, upsertMessageInCache } from '../inbox/queries';
@@ -91,6 +92,9 @@ export function RealtimeProvider({ session, children }: { session: Session; chil
     });
     // Колонку перенумеровали фоново — порядок прежний, но ключи новые: проще перечитать доску
     s.on('stage.rebalanced', ({ pipelineId }) => void qc.invalidateQueries({ queryKey: boardKeys.board(pipelineId) }));
+    s.on('stage.upserted', ({ stage }) => upsertStageInCache(qc, stage));
+    // Сделки удалённой колонки переехали — проще перечитать доску, чем собирать изменения из событий
+    s.on('stage.deleted', ({ pipelineId }) => void qc.invalidateQueries({ queryKey: boardKeys.board(pipelineId) }));
 
     setSocket(s);
     const timer = setInterval(() => locks.pruneExpired(), 2_000);

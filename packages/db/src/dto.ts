@@ -1,5 +1,9 @@
-import type { DealDto } from '@crm/contracts';
-import type { deals } from './schema';
+import type { DealDto, StageDto } from '@crm/contracts';
+import type { deals, pipelineStages } from './schema';
+
+export const toStageDto = (s: typeof pipelineStages.$inferSelect): StageDto => ({
+  id: s.id, pipelineId: s.pipelineId, name: s.name, rank: s.rank, kind: s.kind, slaMinutes: s.slaMinutes,
+});
 
 type DealRow = typeof deals.$inferSelect;
 

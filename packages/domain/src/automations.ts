@@ -49,13 +49,15 @@ export function triggerMatches(trigger: Trigger, event: DomainEvent): boolean {
   }
 }
 
-const money = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
-
-/** Подстановка в шаблон уведомления. Неизвестные плейсхолдеры остаются как есть — видно опечатку. */
-export function renderTemplate(template: string, deal: { title: string; value: string }): string {
+/**
+ * Подстановка в шаблон уведомления. Сумма — в валюте сделки. Неизвестные плейсхолдеры остаются как есть —
+ * видно опечатку. Текст сохраняется в уведомлении один раз, поэтому формат не зависит от языка получателя.
+ */
+export function renderTemplate(template: string, deal: { title: string; value: string; currency: string }): string {
+  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: deal.currency, maximumFractionDigits: 0 });
   return template
     .replaceAll('{{deal.title}}', deal.title)
-    .replaceAll('{{deal.value}}', `${money.format(Number(deal.value))} ₽`);
+    .replaceAll('{{deal.value}}', money.format(Number(deal.value)));
 }
 
 export interface RotationMember {

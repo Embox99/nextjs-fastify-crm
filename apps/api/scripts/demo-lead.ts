@@ -32,16 +32,16 @@ if (kind === 'telegram') {
   const chatId = 100_000 + (n % 5);   // несколько «постоянных» собеседников
   body = JSON.stringify({
     update_id: Date.now(),
-    message: { message_id: Date.now() % 1e9, chat: { id: chatId }, from: { id: chatId, first_name: `Гость ${chatId % 100}` }, text: text ?? 'Здравствуйте! Хочу узнать про тарифы' },
+    message: { message_id: Date.now() % 1e9, chat: { id: chatId }, from: { id: chatId, first_name: `Guest ${chatId % 100}` }, text: text ?? 'Hi! I would like to know more about your pricing' },
   });
   headers = { 'x-telegram-bot-api-secret-token': DEMO_TELEGRAM_SECRET };
 } else {
   body = JSON.stringify({
-    name: `Клиент ${n}`,
-    phone: `+7916${String(n).padStart(7, '0')}`,
+    name: `Client ${n}`,
+    phone: `+44 20 7946 ${String(n % 10_000).padStart(4, '0')}`,
     email: `client${n}@example.com`,
-    title: 'Заявка с сайта: внедрение CRM',
-    message: text ?? 'Нужна CRM на 20 менеджеров, перезвоните',
+    title: 'Website request: CRM rollout',
+    message: text ?? 'We need a CRM for 20 sales reps, please call us back',
   });
   headers = { 'x-signature': signPayload(body, DEMO_WEBSITE_SECRET), 'x-event-id': `demo-${Date.now()}` };
 }

@@ -5,7 +5,8 @@ import { Pencil, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Avatar, Button, Input, Label } from '@/components/ui';
-import { cn, formatMoney, shortName } from '@/lib/utils';
+import { useI18n } from '@/i18n/i18n-provider';
+import { cn, shortName } from '@/lib/utils';
 import { useCompleteTask, useDealTasks } from '../automations/queries';
 import { useDealLock, useLockStore, useSocket } from '../realtime/realtime-provider';
 import { useUpdateDeal } from './queries';
@@ -27,6 +28,7 @@ export function DealSheet({ deal, members, currentUserId, canReassign, onClose }
   const locks = useLockStore();
   const lock = useDealLock(deal.id);
   const update = useUpdateDeal();
+  const { t, format } = useI18n();
 
   const [viewers, setViewers] = useState<Viewer[]>([]);
   const [editing, setEditing] = useState(false);
@@ -91,7 +93,7 @@ export function DealSheet({ deal, members, currentUserId, canReassign, onClose }
     if (force || !socket) return begin();
 
     socket.emit('deal.edit.start', { dealId: deal.id }, (res) => {
-      if (!res.ok) return void toast.error('Не удалось начать редактирование — попробуйте ещё раз');
+      if (!res.ok) return void toast.error(t('deal.editStartFailed'));
       if (res.acquired) begin();
       else setContested(true);
     });
@@ -118,75 +120,75 @@ export function DealSheet({ deal, members, currentUserId, canReassign, onClose }
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label={deal.title}>
-      <button type="button" aria-label="Закрыть" className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <button type="button" aria-label={t('common.close')} className="absolute inset-0 bg-black/30" onClick={onClose} />
       <aside className="relative flex h-full w-full max-w-md flex-col gap-5 overflow-y-auto border-l border-border bg-background p-6 shadow-xl">
         <div className="flex items-start justify-between gap-4">
           <h2 className="text-lg font-semibold leading-snug">{deal.title}</h2>
-          <Button variant="ghost" className="size-8 px-0" onClick={onClose} aria-label="Закрыть"><X className="size-4" /></Button>
+          <Button variant="ghost" className="size-8 px-0" onClick={onClose} aria-label={t('common.close')}><X className="size-4" /></Button>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="viewers">
-          <span>Сейчас смотрят:</span>
+          <span>{t('deal.viewing')}</span>
           {viewers.map((v) => <Avatar key={v.userId} name={v.name} />)}
         </div>
 
         {lockedByOther && (
           <p className="rounded-md bg-warning-soft px-3 py-2 text-sm">
             <Pencil className="mr-1 inline size-3.5" aria-hidden />
-            Сейчас редактирует <b>{shortName(lockedByOther.name)}</b> — ваши изменения могут конфликтовать
+            {t('deal.lockedBy', { name: shortName(lockedByOther.name) })}
           </p>
         )}
         {staleWhileEditing && (
           <p className="rounded-md bg-warning-soft px-3 py-2 text-sm">
-            Пока вы редактировали, сделку изменили. При сохранении вы получите конфликт — обновите форму.
+            {t('deal.staleWhileEditing')}
           </p>
         )}
 
         {editing ? (
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Название</Label>
+              <Label htmlFor="title">{t('deal.title')}</Label>
               <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="value">Сумма, ₽</Label>
+              <Label htmlFor="value">{t('deal.amountIn', { currency: deal.currency })}</Label>
               <Input id="value" inputMode="decimal" pattern="\d{1,12}(\.\d{1,2})?" value={form.value}
                 onChange={(e) => setForm({ ...form, value: e.target.value })} />
             </div>
             {canReassign && (
               <div className="space-y-2">
-                <Label htmlFor="owner">Ответственный</Label>
+                <Label htmlFor="owner">{t('deal.owner')}</Label>
                 <select id="owner" value={form.ownerId} onChange={(e) => setForm({ ...form, ownerId: e.target.value })}
                   className="h-9 w-full rounded-md border border-border bg-card px-2 text-sm">
-                  <option value="">Не назначен</option>
+                  <option value="">{t('common.unassigned')}</option>
                   {members.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
               </div>
             )}
             <div className="flex gap-2">
-              <Button type="submit" disabled={update.isPending}>Сохранить</Button>
-              <Button type="button" variant="outline" onClick={stopEditing}>Отмена</Button>
+              <Button type="submit" disabled={update.isPending}>{t('common.save')}</Button>
+              <Button type="button" variant="outline" onClick={stopEditing}>{t('common.cancel')}</Button>
             </div>
           </form>
         ) : (
           <>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Сумма</dt>
-              <dd className="tabular-nums">{formatMoney(deal.value)}</dd>
-              <dt className="text-muted-foreground">Ответственный</dt>
-              <dd>{owner?.fullName ?? 'Не назначен'}</dd>
-              <dt className="text-muted-foreground">В этапе с</dt>
-              <dd>{new Date(deal.stageEnteredAt).toLocaleString('ru-RU')}</dd>
-              <dt className="text-muted-foreground">Версия</dt>
+              <dt className="text-muted-foreground">{t('deal.value')}</dt>
+              <dd className="tabular-nums">{format.money(deal.value, deal.currency)}</dd>
+              <dt className="text-muted-foreground">{t('deal.owner')}</dt>
+              <dd>{owner?.fullName ?? t('common.unassigned')}</dd>
+              <dt className="text-muted-foreground">{t('deal.inStageSince')}</dt>
+              <dd>{format.full(deal.stageEnteredAt)}</dd>
+              <dt className="text-muted-foreground">{t('deal.version')}</dt>
               <dd className="tabular-nums">{deal.version}</dd>
             </dl>
             {contested && lockedByOther ? (
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => startEditing(true)}>Редактировать всё равно</Button>
+                <Button variant="outline" onClick={() => startEditing(true)}>{t('deal.editAnyway')}</Button>
               </div>
             ) : (
               <Button className="self-start" onClick={() => startEditing()}>
-                <Pencil className="size-4" /> Редактировать
+                <Pencil className="size-4" /> {t('deal.edit')}
               </Button>
             )}
           </>
@@ -198,29 +200,28 @@ export function DealSheet({ deal, members, currentUserId, canReassign, onClose }
   );
 }
 
-const due = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-
 /** Задачи сделки — в том числе поставленные автоматизациями */
 function DealTasks({ dealId, members }: { dealId: string; members: MemberDto[] }) {
   const tasks = useDealTasks(dealId);
   const complete = useCompleteTask(dealId);
+  const { t, format } = useI18n();
   if (!tasks.data?.length) return null;
 
   return (
     <section className="space-y-2 border-t border-border pt-4">
-      <h3 className="text-sm font-semibold">Задачи</h3>
+      <h3 className="text-sm font-semibold">{t('deal.tasks')}</h3>
       <ul className="space-y-2">
-        {tasks.data.map((t) => {
-          const overdue = !t.completedAt && t.dueAt && Date.parse(t.dueAt) < Date.now();
+        {tasks.data.map((task) => {
+          const overdue = !task.completedAt && task.dueAt && Date.parse(task.dueAt) < Date.now();
           return (
-            <li key={t.id} className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-0.5" checked={Boolean(t.completedAt)} disabled={Boolean(t.completedAt)}
-                onChange={() => complete.mutate(t.id)} aria-label={`Выполнено: ${t.title}`} />
-              <span className={cn('flex-1', t.completedAt && 'text-muted-foreground line-through')}>
-                {t.title}
+            <li key={task.id} className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-0.5" checked={Boolean(task.completedAt)} disabled={Boolean(task.completedAt)}
+                onChange={() => complete.mutate(task.id)} aria-label={t('deal.taskDone', { title: task.title })} />
+              <span className={cn('flex-1', task.completedAt && 'text-muted-foreground line-through')}>
+                {task.title}
                 <span className={cn('block text-xs text-muted-foreground', overdue && 'text-destructive')}>
-                  {t.dueAt && `до ${due.format(new Date(t.dueAt))}`}
-                  {t.assigneeId && ` · ${members.find((m) => m.id === t.assigneeId)?.fullName ?? ''}`}
+                  {task.dueAt && t('deal.taskDue', { date: format.dayTime(task.dueAt) })}
+                  {task.assigneeId && ` · ${members.find((m) => m.id === task.assigneeId)?.fullName ?? ''}`}
                 </span>
               </span>
             </li>

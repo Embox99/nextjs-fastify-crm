@@ -21,6 +21,12 @@ export function rankBetween(before: string | null, after: string | null): string
 /** Ровные ключи для n карточек — для начального заполнения и ребаланса */
 export const evenRanks = (n: number): string[] => generateNKeysBetween(null, null, n);
 
+/** n упорядоченных ключей строго между соседями — вставка пачки (перенос сделок из удалённой колонки) */
+export function ranksBetween(before: string | null, after: string | null, n: number): string[] {
+  if (before !== null && after !== null && before >= after) throw new RankConflictError(before, after);
+  return generateNKeysBetween(before, after, n);
+}
+
 export const needsRebalance = (rank: string) => rank.length > RANK_REBALANCE_THRESHOLD;
 
 /** Порядок карточек в колонке: rank, затем id как детерминированный tie-breaker для одинаковых ключей */

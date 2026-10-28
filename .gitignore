@@ -7,3 +7,6 @@ coverage/
 .env
 .env.*.local
 *.log
+
+# Локальные настройки инструментов
+.claude/

@@ -12,46 +12,46 @@ export const DEMO_ORG = 'acme';
 export const DEMO_PASSWORD = 'demo';
 
 const ROLES = {
-  super_admin: { name: 'Администратор', scope: 'all', permissions: ['deal:read', 'deal:create', 'deal:update', 'deal:reassign', 'settings:manage', 'audit:read'] },
-  sales_lead: { name: 'Руководитель продаж', scope: 'team', permissions: ['deal:read', 'deal:create', 'deal:update', 'deal:reassign'] },
-  sales_rep: { name: 'Менеджер', scope: 'own', permissions: ['deal:read', 'deal:create', 'deal:update'] },
+  super_admin: { name: 'Administrator', scope: 'all', permissions: ['deal:read', 'deal:create', 'deal:update', 'deal:reassign', 'settings:manage', 'audit:read'] },
+  sales_lead: { name: 'Sales lead', scope: 'team', permissions: ['deal:read', 'deal:create', 'deal:update', 'deal:reassign'] },
+  sales_rep: { name: 'Sales rep', scope: 'own', permissions: ['deal:read', 'deal:create', 'deal:update'] },
 } as const;
 
 const USERS = [
-  { key: 'admin', email: 'admin@acme.test', fullName: 'Анна Админова', role: 'super_admin' },
-  { key: 'lead', email: 'lead@acme.test', fullName: 'Олег Лидов', role: 'sales_lead' },
-  { key: 'rep1', email: 'rep1@acme.test', fullName: 'Мария Петрова', role: 'sales_rep' },
-  { key: 'rep2', email: 'rep2@acme.test', fullName: 'Иван Сидоров', role: 'sales_rep' },
-  { key: 'rep3', email: 'rep3@acme.test', fullName: 'Дмитрий Козлов', role: 'sales_rep' },
+  { key: 'admin', email: 'admin@acme.test', fullName: 'Alice Morgan', role: 'super_admin' },
+  { key: 'lead', email: 'lead@acme.test', fullName: 'Oliver Grant', role: 'sales_lead' },
+  { key: 'rep1', email: 'rep1@acme.test', fullName: 'Maria Lopez', role: 'sales_rep' },
+  { key: 'rep2', email: 'rep2@acme.test', fullName: 'Ethan Brooks', role: 'sales_rep' },
+  { key: 'rep3', email: 'rep3@acme.test', fullName: 'Daniel Kim', role: 'sales_rep' },
 ] as const;
 
 type UserKey = (typeof USERS)[number]['key'];
 
 const STAGES = [
-  { key: 'new', name: 'Новый', kind: 'open', slaMinutes: 15 },
-  { key: 'qualified', name: 'Квалификация', kind: 'open', slaMinutes: null },
-  { key: 'proposal', name: 'КП отправлено', kind: 'open', slaMinutes: null },
-  { key: 'negotiation', name: 'Переговоры', kind: 'open', slaMinutes: null },
-  { key: 'won', name: 'Выиграно', kind: 'won', slaMinutes: null },
-  { key: 'lost', name: 'Проиграно', kind: 'lost', slaMinutes: null },
+  { key: 'new', name: 'New', kind: 'open', slaMinutes: 15 },
+  { key: 'qualified', name: 'Qualified', kind: 'open', slaMinutes: null },
+  { key: 'proposal', name: 'Proposal sent', kind: 'open', slaMinutes: null },
+  { key: 'negotiation', name: 'Negotiation', kind: 'open', slaMinutes: null },
+  { key: 'won', name: 'Won', kind: 'won', slaMinutes: null },
+  { key: 'lost', name: 'Lost', kind: 'lost', slaMinutes: null },
 ] as const;
 
 type StageKey = (typeof STAGES)[number]['key'];
 
 const DEALS: { title: string; company: string; value: string; stage: StageKey; owner: UserKey | null }[] = [
-  { title: 'Внедрение CRM на 40 мест', company: 'ООО «Северсталь-Сервис»', value: '480000', stage: 'new', owner: 'rep1' },
-  { title: 'Аудит IT-инфраструктуры', company: 'АО «Техноплюс»', value: '150000', stage: 'new', owner: 'rep2' },
-  { title: 'Годовое сопровождение', company: 'ИП Орлов', value: '96000', stage: 'new', owner: null },
-  { title: 'Миграция в облако', company: 'ООО «Логистик Про»', value: '1200000', stage: 'new', owner: 'rep3' },
-  { title: 'Пилот: 5 лицензий', company: 'ООО «Домострой»', value: '45000', stage: 'qualified', owner: 'rep1' },
-  { title: 'Интеграция с 1С', company: 'АО «Агрохолдинг Юг»', value: '320000', stage: 'qualified', owner: 'rep2' },
-  { title: 'Обучение персонала', company: 'ООО «Медлайн»', value: '78000', stage: 'qualified', owner: 'rep3' },
-  { title: 'Расширение до 120 мест', company: 'ПАО «Энергосбыт»', value: '2400000', stage: 'proposal', owner: 'lead' },
-  { title: 'Кастомная отчётность', company: 'ООО «Ритейл Групп»', value: '210000', stage: 'proposal', owner: 'rep1' },
-  { title: 'Телефония + CRM', company: 'ООО «Автодом»', value: '380000', stage: 'negotiation', owner: 'rep2' },
-  { title: 'Лицензии на 3 года', company: 'АО «Стройинвест»', value: '960000', stage: 'negotiation', owner: 'rep1' },
-  { title: 'Поддержка 24/7', company: 'ООО «ФинТех Решения»', value: '540000', stage: 'won', owner: 'rep3' },
-  { title: 'Внедрение под ключ', company: 'ООО «Альфа-Трейд»', value: '720000', stage: 'lost', owner: 'rep2' },
+  { title: 'CRM rollout, 40 seats', company: 'Northwind Logistics', value: '48000', stage: 'new', owner: 'rep1' },
+  { title: 'IT infrastructure audit', company: 'Contoso Ltd', value: '15000', stage: 'new', owner: 'rep2' },
+  { title: 'Annual support plan', company: 'Fabrikam Studio', value: '9600', stage: 'new', owner: null },
+  { title: 'Cloud migration', company: 'Tailspin Freight', value: '120000', stage: 'new', owner: 'rep3' },
+  { title: 'Pilot: 5 licenses', company: 'Lakeside Homes', value: '4500', stage: 'qualified', owner: 'rep1' },
+  { title: 'ERP integration', company: 'Greenfield Agro', value: '32000', stage: 'qualified', owner: 'rep2' },
+  { title: 'Staff training', company: 'Medline Clinics', value: '7800', stage: 'qualified', owner: 'rep3' },
+  { title: 'Expansion to 120 seats', company: 'Summit Energy', value: '240000', stage: 'proposal', owner: 'lead' },
+  { title: 'Custom reporting', company: 'Bluebird Retail', value: '21000', stage: 'proposal', owner: 'rep1' },
+  { title: 'Telephony + CRM', company: 'Autohaus Group', value: '38000', stage: 'negotiation', owner: 'rep2' },
+  { title: '3-year license renewal', company: 'Ironclad Construction', value: '96000', stage: 'negotiation', owner: 'rep1' },
+  { title: '24/7 support', company: 'Ledger Fintech', value: '54000', stage: 'won', owner: 'rep3' },
+  { title: 'Turnkey implementation', company: 'Alpha Trade Co', value: '72000', stage: 'lost', owner: 'rep2' },
 ];
 
 export interface DemoSeed {
@@ -69,8 +69,8 @@ export const DEMO_WEBSITE_SECRET = 'demo-website-hmac-secret';
 export const DEMO_TELEGRAM_SECRET = 'demo-telegram-secret-token';
 
 const DEMO_CHANNELS = [
-  { key: 'website', kind: 'website_form', name: 'Форма на сайте', secret: DEMO_WEBSITE_SECRET },
-  { key: 'telegram', kind: 'telegram', name: 'Telegram-бот', secret: DEMO_TELEGRAM_SECRET },
+  { key: 'website', kind: 'website_form', name: 'Website form', secret: DEMO_WEBSITE_SECRET },
+  { key: 'telegram', kind: 'telegram', name: 'Telegram bot', secret: DEMO_TELEGRAM_SECRET },
 ] as const;
 
 /**
@@ -99,7 +99,7 @@ async function ensureAutomations(db: Db, core: CoreSeed): Promise<string> {
 
   return db.transaction(async (tx) => {
     const [pool] = await tx.insert(assignmentPools)
-      .values({ ...tenant, name: 'Входящие лиды → Enterprise', teamId: core.teams.enterprise }).returning({ id: assignmentPools.id });
+      .values({ ...tenant, name: 'Inbound leads → Enterprise', teamId: core.teams.enterprise }).returning({ id: assignmentPools.id });
     await tx.insert(assignmentPoolMembers).values([
       { ...tenant, poolId: pool!.id, userId: core.users.rep1, position: 0 },
       { ...tenant, poolId: pool!.id, userId: core.users.rep2, position: 1 },
@@ -107,37 +107,37 @@ async function ensureAutomations(db: Db, core: CoreSeed): Promise<string> {
 
     const demo: (Omit<AutomationInput, 'enabled'> & { enabled?: boolean })[] = [
       {
-        name: 'Распределить новый лид',
+        name: 'Route new leads',
         trigger: { type: 'LeadCreated' },
         conditions: { all: [] },
         actions: [
           { type: 'AssignManager', poolId: pool!.id },
-          { type: 'SendNotification', to: 'owner', message: 'Вам назначен новый лид: {{deal.title}}' },
+          { type: 'SendNotification', to: 'owner', message: 'New lead assigned to you: {{deal.title}}' },
         ],
       },
       {
-        name: 'SLA: лид без реакции 15 минут',
+        name: 'SLA: lead untouched for 15 minutes',
         trigger: { type: 'StageSlaBreached', stageId: core.stages.new },
         conditions: { all: [] },
         actions: [
-          { type: 'SendNotification', to: 'teamLead', message: 'Лид «{{deal.title}}» ждёт реакции дольше 15 минут' },
-          { type: 'CreateTask', title: 'Срочно связаться: {{deal.title}}', dueInMinutes: 30, assignTo: 'owner' },
+          { type: 'SendNotification', to: 'teamLead', message: 'Lead "{{deal.title}}" has been waiting for over 15 minutes' },
+          { type: 'CreateTask', title: 'Contact ASAP: {{deal.title}}', dueInMinutes: 30, assignTo: 'owner' },
         ],
       },
       {
-        name: 'Крупная сделка: КП отправлено',
+        name: 'Large deal: proposal sent',
         trigger: { type: 'StageChanged', toStageId: core.stages.proposal },
-        conditions: { all: [{ field: 'deal.value', op: 'gt', value: 100000 }] },
+        conditions: { all: [{ field: 'deal.value', op: 'gt', value: 10000 }] },
         actions: [
-          { type: 'CreateTask', title: 'Перезвонить по КП: {{deal.title}}', dueInMinutes: 2 * 24 * 60, assignTo: 'owner' },
-          { type: 'SendNotification', to: 'teamLead', message: 'Крупная сделка «{{deal.title}}» на {{deal.value}} — КП отправлено' },
+          { type: 'CreateTask', title: 'Follow up on the proposal: {{deal.title}}', dueInMinutes: 2 * 24 * 60, assignTo: 'owner' },
+          { type: 'SendNotification', to: 'teamLead', message: 'Large deal "{{deal.title}}" worth {{deal.value}}: proposal sent' },
         ],
       },
       {
-        name: 'Сделка без активности 7 дней',
+        name: 'Deal idle for 7 days',
         trigger: { type: 'NoActivityInDays', days: 7 },
         conditions: { all: [] },
-        actions: [{ type: 'SendNotification', to: 'owner', message: 'Сделка «{{deal.title}}» без активности неделю' }],
+        actions: [{ type: 'SendNotification', to: 'owner', message: 'Deal "{{deal.title}}" has had no activity for a week' }],
       },
     ];
     await tx.insert(automations).values(demo.map((a) => ({
@@ -179,7 +179,7 @@ async function seedCore(db: Db): Promise<CoreSeed> {
   return db.transaction(async (tx) => {
     const [org] = await tx.insert(organizations).values({ name: 'Acme Services', slug: DEMO_ORG }).returning();
     const organizationId = org!.id;
-    const [ws] = await tx.insert(workspaces).values({ organizationId, name: 'Москва' }).returning();
+    const [ws] = await tx.insert(workspaces).values({ organizationId, name: 'New York' }).returning();
     const workspaceId = ws!.id;
     const tenant = { organizationId, workspaceId };
 
@@ -214,7 +214,7 @@ async function seedCore(db: Db): Promise<CoreSeed> {
     ]);
     const teamOf = (owner: UserKey | null) => (owner === 'rep3' ? smb!.id : enterprise!.id);
 
-    const [pipeline] = await tx.insert(pipelines).values({ ...tenant, name: 'Продажи' }).returning();
+    const [pipeline] = await tx.insert(pipelines).values({ ...tenant, name: 'Sales' }).returning();
     const stageRanks = evenRanks(STAGES.length);
     const stageIds = {} as Record<StageKey, string>;
     for (const [i, s] of STAGES.entries()) {

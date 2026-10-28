@@ -2,6 +2,7 @@ import type { ConversationDto, MessageDto } from '@crm/contracts';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/i18n/i18n-provider';
 import { newMutationId } from '@/lib/utils';
 import { pendingMutations } from '../board/queries';
 
@@ -51,6 +52,7 @@ export function upsertMessageInCache(qc: QueryClient, message: MessageDto, repla
  */
 export function useSendMessage(conversationId: string, authorId: string) {
   const qc = useQueryClient();
+  const { t } = useI18n();
   return useMutation({
     mutationFn: ({ body, clientMutationId }: { body: string; clientMutationId: string }) =>
       apiFetch<MessageDto>(`/conversations/${conversationId}/messages`, { method: 'POST', body: { body, clientMutationId } }),
@@ -64,7 +66,7 @@ export function useSendMessage(conversationId: string, authorId: string) {
     onSuccess: (message, { clientMutationId }) => upsertMessageInCache(qc, message, clientMutationId),
     onError: (_e, { clientMutationId }) => {
       qc.setQueryData<MessageDto[]>(inboxKeys.messages(conversationId), (list) => list?.filter((m) => m.id !== clientMutationId));
-      toast.error('Не удалось отправить сообщение');
+      toast.error(t('inbox.sendFailed'));
     },
     // Превью и порядок в списке диалогов обновит событие conversation.upserted
     onSettled: (_d, _e, { clientMutationId }) => pendingMutations.delete(clientMutationId),

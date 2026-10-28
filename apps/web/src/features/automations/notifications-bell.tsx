@@ -4,15 +4,15 @@ import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui';
+import { useI18n } from '@/i18n/i18n-provider';
 import { cn } from '@/lib/utils';
 import { useMarkAllRead, useNotifications } from './queries';
-
-const time = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export function NotificationsBell() {
   const router = useRouter();
   const notifications = useNotifications();
   const markAll = useMarkAllRead();
+  const { t, format } = useI18n();
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const unread = notifications.data?.unread ?? 0;
@@ -31,7 +31,7 @@ export function NotificationsBell() {
 
   return (
     <div ref={panel} className="relative">
-      <Button variant="ghost" className="relative size-8 px-0" aria-label={`Уведомления${unread ? `: ${unread} новых` : ''}`}
+      <Button variant="ghost" className="relative size-8 px-0" aria-label={unread ? t('notifications.ariaUnread', { count: unread }) : t('notifications.aria')}
         aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <Bell className="size-4" />
         {unread > 0 && (
@@ -44,13 +44,13 @@ export function NotificationsBell() {
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-lg">
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <span className="text-sm font-semibold">Уведомления</span>
+            <span className="text-sm font-semibold">{t('notifications.title')}</span>
             {unread > 0 && (
-              <button type="button" className="text-xs text-primary hover:underline" onClick={() => markAll.mutate()}>Прочитать все</button>
+              <button type="button" className="text-xs text-primary hover:underline" onClick={() => markAll.mutate()}>{t('notifications.readAll')}</button>
             )}
           </div>
           <ul className="max-h-96 overflow-y-auto">
-            {notifications.data?.items.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">Пока пусто</li>}
+            {notifications.data?.items.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">{t('notifications.empty')}</li>}
             {notifications.data?.items.map((n) => (
               <li key={n.id}>
                 <button type="button" disabled={!n.dealId}
@@ -61,7 +61,7 @@ export function NotificationsBell() {
                     router.push(`/board?deal=${n.dealId}`);
                   }}>
                   <p className="text-sm">{n.title}</p>
-                  <p className="text-xs text-muted-foreground">{time.format(new Date(n.createdAt))}</p>
+                  <p className="text-xs text-muted-foreground">{format.dayTime(n.createdAt)}</p>
                 </button>
               </li>
             ))}

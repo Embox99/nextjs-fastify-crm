@@ -43,7 +43,7 @@ describe('секреты каналов', () => {
     expect(err?.message).toMatch(/permission denied/);
 
     const visible = await withRls(app.db, adm, (tx) => tx.select({ id: channels.id, name: channels.name }).from(channels));
-    expect(visible.map((c) => c.name).sort()).toEqual(['Telegram-бот', 'Форма на сайте']);
+    expect(visible.map((c) => c.name).sort()).toEqual(['Telegram bot', 'Website form']);
   });
 
   it('webhook_channel отдаёт тенанта и зашифрованный секрет по id без контекста', async () => {

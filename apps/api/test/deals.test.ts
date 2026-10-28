@@ -73,7 +73,7 @@ describe('доска', () => {
     expect(bl.deals.every((d) => d.teamId === demo.teams.enterprise)).toBe(true);
     expect(bl.deals.some((d) => d.ownerId === demo.users.rep2)).toBe(true);
     expect(ba.deals.some((d) => d.teamId === demo.teams.smb)).toBe(true);
-    expect(ba.stages.map((s) => s.name)).toEqual(['Новый', 'Квалификация', 'КП отправлено', 'Переговоры', 'Выиграно', 'Проиграно']);
+    expect(ba.stages.map((s) => s.name)).toEqual(['New', 'Qualified', 'Proposal sent', 'Negotiation', 'Won', 'Lost']);
     expect(ba.members).toHaveLength(5);
   });
 });

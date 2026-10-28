@@ -81,7 +81,7 @@ export const deals = pgTable('deals', {
   rank: rankKey('rank').notNull(),
   title: text('title').notNull(),
   value: numeric('value', { precision: 14, scale: 2 }).notNull().default('0'),
-  currency: text('currency').notNull().default('RUB'),
+  currency: text('currency').notNull().default('USD'),
   contactId: uuid('contact_id'),
   ownerId: uuid('owner_id'),
   teamId: uuid('team_id'),

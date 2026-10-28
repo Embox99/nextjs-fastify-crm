@@ -38,7 +38,7 @@ export async function notificationsRoutes(app: FastifyInstance) {
       .where(and(eq(activities.dealId, dealId), eq(activities.type, 'task')))
       .orderBy(activities.completedAt, activities.dueAt));
     return rows.map((t) => ({
-      id: t.id, dealId: t.dealId!, title: (t.payload as { title?: string }).title ?? 'Задача',
+      id: t.id, dealId: t.dealId!, title: (t.payload as { title?: string }).title ?? 'Task',
       assigneeId: t.assigneeId, dueAt: t.dueAt?.toISOString() ?? null,
       completedAt: t.completedAt?.toISOString() ?? null, createdAt: t.createdAt.toISOString(),
     }));

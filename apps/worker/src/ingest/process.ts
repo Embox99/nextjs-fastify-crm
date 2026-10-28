@@ -120,12 +120,12 @@ async function findOrCreateDeal(
     .orderBy(asc(pipelineStages.rank)).limit(1);
   const [top] = await tx.select({ rank: min(deals.rank) }).from(deals).where(eq(deals.stageId, stage!.id));
 
-  const who = lead.name ?? lead.phone ?? lead.email ?? 'новый контакт';
+  const who = lead.name ?? lead.phone ?? lead.email ?? 'new contact';
   const [row] = await tx.insert(deals).values({
     organizationId, workspaceId, pipelineId,
     stageId: stage!.id,
     rank: rankBetween(null, top?.rank ?? null),
-    title: lead.dealTitle ?? `Заявка: ${who}`,
+    title: lead.dealTitle ?? `Lead: ${who}`,
     contactId,
   }).returning();
   return { row: row!, created: true };

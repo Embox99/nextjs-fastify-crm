@@ -45,7 +45,7 @@ describe('Telegram', () => {
   it('пользователь поделился контактом — появляется телефон', () => {
     const lead = normalize('telegram', update({ contact: { phone_number: '79161234567' } }), 'x');
     expect(lead.phone).toBe('+79161234567');
-    expect(lead.message).toBe('Поделился контактом');
+    expect(lead.message).toBe('Shared a contact');
   });
 
   it('апдейт без нового сообщения (edited_message, callback) — игнорируется', () => {

@@ -1,5 +1,5 @@
 import type { BoardDto, PipelineDto } from '@crm/contracts';
-import { deals, pipelineStages, pipelines, toDealDto, users, workspaceMembers } from '@crm/db';
+import { deals, pipelineStages, pipelines, toDealDto, toStageDto, users, workspaceMembers } from '@crm/db';
 import { compareByRank } from '@crm/domain';
 import { asc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -36,9 +36,7 @@ export async function pipelinesRoutes(app: FastifyInstance) {
 
     return {
       pipeline: board.pipeline,
-      stages: board.stages.map((s) => ({
-        id: s.id, pipelineId: s.pipelineId, name: s.name, rank: s.rank, kind: s.kind, slaMinutes: s.slaMinutes,
-      })),
+      stages: board.stages.map(toStageDto),
       deals: board.dealRows.map(toDealDto).sort(compareByRank),
       members: board.members,
     };

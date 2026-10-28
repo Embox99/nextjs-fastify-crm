@@ -90,7 +90,7 @@ describe('LeadCreated → AssignManager (round-robin) → уведомление
     expect(conv).toMatchObject({ assigneeId: demo.users.rep1, teamId: demo.teams.enterprise });
 
     const [note] = await deps.admin.db.select().from(notifications).where(eq(notifications.dealId, first.deal.id));
-    expect(note).toMatchObject({ userId: demo.users.rep1, title: `Вам назначен новый лид: ${first.deal.title}` });
+    expect(note).toMatchObject({ userId: demo.users.rep1, title: `New lead assigned to you: ${first.deal.title}` });
 
     // Менеджер узнаёт обо всём в своей комнате: сделка, диалог, уведомление
     const toRep1 = deps.emitted.filter((e) => e.rooms.includes(`ws:${demo.workspaceId}:user:${demo.users.rep1}`));
@@ -172,13 +172,13 @@ describe('StageChanged + условие deal.value > 100 000', () => {
     expect(big.runIds).toHaveLength(1);
     const [task] = await deps.admin.db.select().from(activities).where(and(eq(activities.dealId, big.dealId), eq(activities.type, 'task')));
     expect(task).toMatchObject({ assigneeId: demo.users.rep1 });
-    expect((task!.payload as { title: string }).title).toMatch(/^Перезвонить по КП:/);
+    expect((task!.payload as { title: string }).title).toMatch(/^Follow up on the proposal:/);
     expect(task!.dueAt!.getTime() - Date.now()).toBeGreaterThan(47 * 3600_000);
     const [note] = await deps.admin.db.select().from(notifications).where(eq(notifications.dealId, big.dealId));
     expect(note).toMatchObject({ userId: demo.users.lead });
-    expect(note!.title).toContain('150 000 ₽');
+    expect(note!.title).toContain('$150,000');
 
-    expect((await moveToProposal('50000')).runIds).toEqual([]);
+    expect((await moveToProposal('5000')).runIds).toEqual([]);
   });
 });
 
